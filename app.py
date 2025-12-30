@@ -5,15 +5,19 @@ A Flask-SocketIO application that serves a web-based virtual Xbox controller
 and translates button presses to virtual gamepad inputs.
 """
 
-from flask import Flask, render_template, jsonify, send_from_directory
+from flask import Flask, render_template, jsonify, send_from_directory, request
 from flask_socketio import SocketIO
 import vgamepad as vg
 import os
 import ssl
 import socket
+import signal
+import sys
+import atexit
 
 # Lazy initialization for gamepad (handles ViGEmBus connection issues)
 gamepad = None
+server_running = True
 
 def get_gamepad():
     """Get or create the virtual gamepad with retry logic."""
@@ -27,6 +31,48 @@ def get_gamepad():
             print("    Try: Restart the ViGEmBus service or reboot your PC")
             return None
     return gamepad
+
+
+def cleanup_gamepad():
+    """Safely cleanup and disconnect the virtual gamepad."""
+    global gamepad
+    if gamepad is not None:
+        try:
+            # Reset all inputs before disconnecting
+            gamepad.reset()
+            gamepad.update()
+            # Note: vgamepad automatically handles cleanup on object deletion
+            gamepad = None
+            print("\n  ✓ Virtual controller disconnected safely")
+        except Exception as e:
+            print(f"\n  ✗ Error during controller cleanup: {e}")
+
+
+def shutdown_server():
+    """Gracefully shutdown the server and cleanup resources."""
+    global server_running
+    if not server_running:
+        return  # Prevent double shutdown
+    
+    server_running = False
+    print("\n  Shutting down server...")
+    cleanup_gamepad()
+    print("  ✓ Server shutdown complete")
+
+
+def signal_handler(sig, frame):
+    """Handle shutdown signals (Ctrl+C, SIGTERM)."""
+    print(f"\n  Received shutdown signal ({signal.Signals(sig).name})")
+    shutdown_server()
+    sys.exit(0)
+
+
+# Register signal handlers for graceful shutdown
+signal.signal(signal.SIGINT, signal_handler)   # Ctrl+C
+signal.signal(signal.SIGTERM, signal_handler)  # Termination signal
+
+# Register cleanup on normal exit
+atexit.register(cleanup_gamepad)
 
 # Flask app configuration
 app = Flask(__name__)
@@ -163,6 +209,40 @@ def manifest():
 def service_worker():
     """Serve service worker from root path for proper scope."""
     return send_from_directory('static', 'sw.js', mimetype='application/javascript')
+
+
+@app.route('/status')
+def status():
+    """Return server status and controller state."""
+    return jsonify({
+        'running': server_running,
+        'controller_connected': gamepad is not None
+    })
+
+
+@app.route('/shutdown', methods=['POST'])
+def shutdown():
+    """
+    Safely shutdown the server via HTTP request.
+    Only allows requests from localhost for security.
+    """
+    # Security: Only allow shutdown from localhost
+    if request.remote_addr not in ['127.0.0.1', '::1', 'localhost']:
+        return jsonify({'error': 'Shutdown only allowed from localhost'}), 403
+    
+    # Trigger shutdown
+    shutdown_server()
+    
+    # Schedule the actual server stop
+    def stop_server():
+        import time
+        time.sleep(0.5)  # Give time for response to be sent
+        os._exit(0)
+    
+    import threading
+    threading.Thread(target=stop_server, daemon=True).start()
+    
+    return jsonify({'message': 'Server shutting down...'})
 
 
 # ============================================
