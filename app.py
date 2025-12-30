@@ -31,14 +31,19 @@ BUTTON_MAP = {
 
 # Web App Manifest for PWA
 MANIFEST = {
+    "id": "/",
     "name": "OpenController",
     "short_name": "OController",
     "description": "Virtual Xbox Controller for your PC",
-    "start_url": "/",
+    "start_url": "/?source=pwa",
+    "scope": "/",
     "display": "fullscreen",
+    "display_override": ["fullscreen", "standalone"],
     "orientation": "landscape",
     "background_color": "#1a1a1a",
     "theme_color": "#1a1a1a",
+    "categories": ["games", "utilities"],
+    "prefer_related_applications": False,
     "icons": [
         {"src": "/static/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}
     ]
