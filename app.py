@@ -12,8 +12,21 @@ import os
 import ssl
 import socket
 
-# Initialize the Virtual Xbox 360 Controller
-gamepad = vg.VX360Gamepad()
+# Lazy initialization for gamepad (handles ViGEmBus connection issues)
+gamepad = None
+
+def get_gamepad():
+    """Get or create the virtual gamepad with retry logic."""
+    global gamepad
+    if gamepad is None:
+        try:
+            gamepad = vg.VX360Gamepad()
+            print("  ✓ Virtual Xbox 360 controller connected")
+        except Exception as e:
+            print(f"  ✗ Could not connect to ViGEmBus: {e}")
+            print("    Try: Restart the ViGEmBus service or reboot your PC")
+            return None
+    return gamepad
 
 # Flask app configuration
 app = Flask(__name__)
@@ -161,6 +174,11 @@ def handle_input(data):
     """Handle input from web client (buttons and thumbstick)."""
     input_type = data.get('type', 'button')
     
+    # Get gamepad with lazy initialization
+    gp = get_gamepad()
+    if gp is None:
+        return  # Gamepad not available
+    
     if input_type == 'button':
         btn = data.get('button')
         pressed = data.get('pressed', False)
@@ -172,9 +190,9 @@ def handle_input(data):
         
         # Press or release the mapped button
         if pressed:
-            gamepad.press_button(button=xbox_button)
+            gp.press_button(button=xbox_button)
         else:
-            gamepad.release_button(button=xbox_button)
+            gp.release_button(button=xbox_button)
     
     elif input_type == 'stick':
         # Handle thumbstick input (-1.0 to 1.0)
@@ -189,9 +207,9 @@ def handle_input(data):
         stick_x = max(-32768, min(32767, stick_x))
         stick_y = max(-32768, min(32767, stick_y))
         
-        gamepad.left_joystick(x_value=stick_x, y_value=stick_y)
+        gp.left_joystick(x_value=stick_x, y_value=stick_y)
     
-    gamepad.update()
+    gp.update()
 
 
 # ============================================

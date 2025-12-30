@@ -1,28 +1,42 @@
 {
+    "id": "/",
     "name": "OpenController",
     "short_name": "OController",
     "description": "Virtual Xbox Controller for your PC",
     "start_url": "/",
-    "display": "standalone",
+    "scope": "/",
+    "display": "fullscreen",
+    "display_override": [
+        "fullscreen",
+        "standalone",
+        "minimal-ui"
+    ],
     "background_color": "#1a1a1a",
     "theme_color": "#1a1a1a",
     "orientation": "landscape",
+    "categories": [
+        "games",
+        "utilities"
+    ],
+    "prefer_related_applications": false,
     "icons": [
         {
             "src": "/static/images/icon-192.png",
             "sizes": "192x192",
-            "type": "image/png"
-        },
-        {
-            "src": "/static/images/icon-512.png",
-            "sizes": "512x512",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any"
         },
         {
             "src": "/static/images/icon-512.png",
             "sizes": "512x512",
             "type": "image/png",
-            "purpose": "any maskable"
+            "purpose": "any"
+        },
+        {
+            "src": "/static/images/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
         }
     ]
 }
