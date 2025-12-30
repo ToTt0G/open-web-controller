@@ -10,20 +10,25 @@
     <!-- PWA Manifest -->
     <link rel="manifest" href="/static/manifest.json">
 
-    <!-- iOS PWA Support (required - Safari doesn't fully use manifest) -->
+    <!-- iOS PWA Support -->
     <link rel="apple-touch-icon" href="/static/images/apple-touch-icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="OController">
 
     <!-- Android/Chrome -->
-    <meta name="theme-color" content="#1a1a1a">
+    <meta name="theme-color" content="#0a0a0a">
     <meta name="mobile-web-app-capable" content="yes">
 
     <!-- General -->
-    <meta name="description" content="Virtual Xbox Controller for your PC">
+    <meta name="description" content="Premium Virtual Xbox Controller">
     <meta name="format-detection" content="telephone=no">
     <link rel="icon" type="image/png" href="/static/images/icon-192.png">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
 
     <!-- Styles -->
     <link rel="stylesheet" href="/static/css/style.css">
@@ -31,7 +36,7 @@
     <!-- Socket.IO -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
 
-    <!-- Service Worker Registration (inline for reliability) -->
+    <!-- Service Worker -->
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js')
@@ -39,72 +44,132 @@
                 .catch(err => console.log('SW Failed', err));
         }
     </script>
-
-    <style>
-        /* iOS safe area handling */
-        body {
-            padding-left: env(safe-area-inset-left);
-            padding-right: env(safe-area-inset-right);
-        }
-    </style>
 </head>
 
 <body>
 
-    <!-- Settings Button -->
-    <button id="settings-btn">⚙️</button>
+    <!-- Background Elements -->
+    <div class="bg-noise"></div>
+    <div class="bg-glow"></div>
 
-    <!-- Settings Modal -->
-    <div id="settings-modal">
-        <div id="settings-content">
-            <h2>⚙️ Settings</h2>
-            <div class="setting-item">
-                <span class="setting-label">Use Thumbstick</span>
-                <div id="thumbstick-toggle" class="toggle-switch"></div>
+    <!-- UI Layer -->
+    <div id="ui-layer">
+        <!-- Header / Status Bar -->
+        <header id="status-bar">
+            <div id="connection-status" class="connecting">
+                <div class="status-icon">
+                    <svg viewBox="0 0 24 24" fill="none" class="icon-svg">
+                        <path
+                            d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"
+                            fill="currentColor" />
+                    </svg>
+                </div>
+                <span class="text">CONNECTING</span>
             </div>
-            <button id="close-settings">Done</button>
+
+            <button id="settings-btn" aria-label="Settings">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path
+                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                    </path>
+                </svg>
+            </button>
+        </header>
+
+        <!-- Controls Layer -->
+        <main id="controls-area">
+            <!-- Left Zone: D-Pad / Thumbstick -->
+            <section class="zone left-zone" id="zone-left">
+                <div class="zone-label">MOVEMENT</div>
+
+                <!-- Dynamic Floating Thumbstick (Default) -->
+                <div id="thumbstick-layer">
+                    <div id="thumbstick-base"></div>
+                    <div id="thumbstick-knob"></div>
+                    <!-- Visual cue for touch area -->
+                    <div class="touch-hint">TOUCH ANYWHERE</div>
+                </div>
+
+                <!-- D-Pad (Hidden by default) -->
+                <div id="dpad-container" style="display: none;">
+                    <button id="btn-up" class="dpad-btn" data-key="up">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M7 14l5-5 5 5z" fill="currentColor" />
+                        </svg>
+                    </button>
+                    <button id="btn-left" class="dpad-btn" data-key="left">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M14 7l-5 5 5 5z" fill="currentColor" />
+                        </svg>
+                    </button>
+                    <button id="btn-right" class="dpad-btn" data-key="right">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M10 17l5-5-5-5z" fill="currentColor" />
+                        </svg>
+                    </button>
+                    <button id="btn-down" class="dpad-btn" data-key="down">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M7 10l5 5 5-5z" fill="currentColor" />
+                        </svg>
+                    </button>
+                    <div class="dpad-center"></div>
+                </div>
+            </section>
+
+            <!-- Right Zone: ABXY Buttons -->
+            <section class="zone right-zone">
+                <div class="zone-label">ACTIONS</div>
+                <div id="actions-container">
+                    <button id="btn-y" class="action-btn" data-key="y">Y</button>
+                    <button id="btn-x" class="action-btn" data-key="x">X</button>
+                    <button id="btn-b" class="action-btn" data-key="b">B</button>
+                    <button id="btn-a" class="action-btn" data-key="a">A</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="settings-modal" class="modal-backdrop">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>SETTINGS</h2>
+                <button id="close-settings" class="icon-btn">
+                    <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="24" height="24">
+                        <path d="M18 6L6 18M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="setting-group">
+                <label class="setting-row">
+                    <span>Input Method</span>
+                    <div class="toggle-container">
+                        <input type="checkbox" id="input-mode-toggle" checked>
+                        <span class="toggle-track">
+                            <span class="toggle-knob"></span>
+                        </span>
+                    </div>
+                </label>
+                <div class="setting-description" id="input-mode-desc">
+                    Dynamic Stick active. Touch anywhere on left side to move.
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Connection Status Indicator -->
-    <div id="connection-status" class="connecting">
-        <span class="dot"></span>
-        <span class="text">Connecting...</span>
-    </div>
-
-    <!-- Portrait mode warning overlay -->
     <div id="rotate-prompt">
-        <div class="rotate-icon">📱</div>
-        <div>Please rotate your device</div>
-        <div style="font-size: 1rem; opacity: 0.7; margin-top: 0.5rem;">Landscape mode required</div>
-    </div>
-
-    <!-- Left Zone: D-Pad or Thumbstick -->
-    <div class="zone">
-        <!-- D-Pad (default) -->
-        <div id="dpad-container">
-            <div id="btn-up" class="dpad-btn" data-key="up">▲</div>
-            <div id="btn-left" class="dpad-btn" data-key="left">◀</div>
-            <div id="dpad-center"></div>
-            <div id="btn-right" class="dpad-btn" data-key="right">▶</div>
-            <div id="btn-down" class="dpad-btn" data-key="down">▼</div>
+        <div class="rotate-icon">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="64" height="64">
+                <path
+                    d="M4 6h16v12H4z M22 5.5v13c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2v-13c0-1.1.9-2 2-2h16c1.1 0 2 .9 2 2z">
+                </path>
+            </svg>
         </div>
-
-        <!-- Thumbstick (hidden by default) -->
-        <div id="thumbstick-container">
-            <div id="thumbstick-base"></div>
-            <div id="thumbstick-knob"></div>
-        </div>
-    </div>
-
-    <!-- Right Zone: ABXY Buttons (Xbox diamond layout) -->
-    <div class="zone">
-        <div id="actions-container">
-            <div id="btn-y" class="action-btn" data-key="y">Y</div>
-            <div id="btn-x" class="action-btn" data-key="x">X</div>
-            <div id="btn-b" class="action-btn" data-key="b">B</div>
-            <div id="btn-a" class="action-btn" data-key="a">A</div>
-        </div>
+        <h3>ROTATE DEVICE</h3>
+        <p>This controller is designed for landscape mode.</p>
     </div>
 
     <script src="/static/js/controller.js"></script>

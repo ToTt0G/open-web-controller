@@ -1,74 +1,548 @@
-/* OpenController - Virtual Xbox Controller Styles */
-
+/* OpenController - Cyber Series Style */
 :root {
-    --bg-color: #1a1a1a;
-    --btn-color: #333;
-    --btn-active: #444;
-    --accent-green: #00ff00;
-    --accent-red: #ff0055;
-    --accent-blue: #00ccff;
-    --accent-yellow: #ffcc00;
-    --text-color: rgba(255, 255, 255, 0.8);
-    /* Responsive sizing based on viewport */
-    --dpad-size: clamp(140px, 25vmin, 220px);
-    --dpad-btn: clamp(40px, 7vmin, 70px);
-    --action-btn: clamp(50px, 10vmin, 80px);
-    --thumbstick-size: clamp(120px, 22vmin, 180px);
+    --bg-dark: #050505;
+    --bg-panel: rgba(20, 20, 23, 0.6);
+    --text-primary: #e0e0e0;
+    --text-muted: #808080;
+
+    /* Neon Accents */
+    --neon-blue: #00f3ff;
+    --neon-green: #00ff9d;
+    --neon-red: #ff2a6d;
+    --neon-yellow: #ffcc00;
+
+    /* UI Sizes */
+    --dpad-size: clamp(140px, 28vmin, 240px);
+    --btn-size: clamp(50px, 11vmin, 85px);
+    --stick-size: clamp(100px, 20vmin, 160px);
+
+    /* Safe Area for notched phones */
+    --safe-left: env(safe-area-inset-left, 20px);
+    --safe-right: env(safe-area-inset-right, 20px);
 }
 
 * {
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
 }
 
 body {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
+    margin: 0;
+    padding: 0;
     width: 100vw;
     height: 100vh;
-    margin: 0;
-    padding: 0 5vw;
-    background: radial-gradient(circle at center, #2a2a2a, #000);
-    touch-action: none;
     overflow: hidden;
-    font-family: 'Segoe UI', sans-serif;
+    background-color: var(--bg-dark);
+    font-family: 'Outfit', sans-serif;
     user-select: none;
+    touch-action: none;
     -webkit-user-select: none;
+    color: var(--text-primary);
 }
 
-/* Portrait mode overlay - prompts rotation */
+/* Background Effects */
+.bg-noise {
+    position: fixed;
+    inset: 0;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+}
+
+.bg-glow {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at 50% 120%, rgba(0, 243, 255, 0.08), transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* UI Layer */
+#ui-layer {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header */
+#status-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 15px calc(var(--safe-right) + 20px) 0 calc(var(--safe-left) + 20px);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: none;
+    /* Let touches pass through to zones if needed */
+}
+
+#status-bar>* {
+    pointer-events: auto;
+}
+
+/* Connection Status */
+#connection-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+#connection-status .status-icon {
+    width: 18px;
+    height: 18px;
+    color: #555;
+    transition: color 0.3s;
+}
+
+#connection-status .text {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: #777;
+}
+
+/* Connected State */
+#connection-status.connected {
+    border-color: rgba(0, 255, 157, 0.3);
+    background: rgba(0, 255, 157, 0.05);
+}
+
+#connection-status.connected .status-icon {
+    color: var(--neon-green);
+    filter: drop-shadow(0 0 5px var(--neon-green));
+}
+
+#connection-status.connected .text {
+    color: var(--neon-green);
+}
+
+/* Settings Button */
+#settings-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    width: 44px;
+    /* Larger touch target */
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+    transition: all 0.2s;
+    pointer-events: auto;
+    /* explicit */
+    z-index: 1000;
+    /* Ensure on top */
+}
+
+#settings-btn svg {
+    width: 22px;
+    height: 22px;
+}
+
+#settings-btn:active {
+    transform: scale(0.9);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Main Controls Area */
+#controls-area {
+    flex: 1;
+    display: flex;
+    width: 100%;
+}
+
+.zone {
+    flex: 1;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.left-zone {
+    padding-left: var(--safe-left);
+}
+
+.right-zone {
+    padding-right: var(--safe-right);
+}
+
+.zone-label {
+    position: absolute;
+    bottom: 20px;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    color: rgba(255, 255, 255, 0.1);
+    font-weight: 700;
+    text-transform: uppercase;
+    pointer-events: none;
+}
+
+/* --- DYNAMIC THUMBSTICK --- */
+#thumbstick-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* No background, it catches touches */
+}
+
+.touch-hint {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.15);
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    padding: 10px 20px;
+    border-radius: 20px;
+    pointer-events: none;
+}
+
+#thumbstick-base {
+    position: absolute;
+    width: var(--stick-size);
+    height: var(--stick-size);
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.02) 0%, transparent 70%);
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+    transform: translate(-50%, -50%);
+    /* Hidden until touch */
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+}
+
+#thumbstick-knob {
+    position: absolute;
+    width: calc(var(--stick-size) * 0.4);
+    height: calc(var(--stick-size) * 0.4);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: opacity 0.2s, background 0.2s;
+    pointer-events: none;
+}
+
+/* Active State for Stick */
+#thumbstick-layer.active #thumbstick-base,
+#thumbstick-layer.active #thumbstick-knob {
+    opacity: 1;
+}
+
+#thumbstick-layer.active .touch-hint {
+    opacity: 0;
+}
+
+#thumbstick-knob.active {
+    background: var(--neon-blue);
+    box-shadow: 0 0 20px var(--neon-blue), inset 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+/* --- D-PAD --- */
+#dpad-container {
+    position: relative;
+    /* Use same size logic as ABXY for symmetry */
+    width: calc(var(--btn-size) * 3.5);
+    height: calc(var(--btn-size) * 3.5);
+}
+
+.dpad-btn {
+    position: absolute;
+    width: var(--btn-size);
+    height: var(--btn-size);
+    border-radius: 50%;
+    /* Make them round like ABXY */
+    background: linear-gradient(145deg, #1f1f1f, #151515);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #666;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.1s;
+    cursor: pointer;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.dpad-btn:active,
+.dpad-btn.active {
+    background: #2a2a2a;
+    color: var(--neon-blue);
+    border-color: rgba(0, 243, 255, 0.3);
+    box-shadow: 0 0 15px rgba(0, 243, 255, 0.1);
+    transform: scale(0.92);
+}
+
+.dpad-btn svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* Position exactly like ABXY */
+#btn-up {
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+#btn-down {
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+#btn-left {
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+#btn-right {
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.dpad-center {
+    display: none;
+}
+
+/* --- ACTION BUTTONS (Diamond Layout) --- */
+#actions-container {
+    position: relative;
+    width: calc(var(--btn-size) * 3.5);
+    /* Spread out more */
+    height: calc(var(--btn-size) * 3.5);
+}
+
+.action-btn {
+    position: absolute;
+    width: var(--btn-size);
+    height: var(--btn-size);
+    border-radius: 50%;
+    border: none;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: rgba(0, 0, 0, 0.7);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5), inset 0 2px 2px rgba(255, 255, 255, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.1s, filter 0.1s;
+}
+
+.action-btn:active,
+.action-btn.active {
+    transform: scale(0.92);
+    filter: brightness(1.2);
+}
+
+/* Specific Colors */
+/* Specific Colors - Smoother Gradients */
+#btn-y {
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(145deg, #ffcc00, #ff9900);
+}
+
+#btn-y:active,
+#btn-y.active {
+    transform: translateX(-50%) scale(0.92);
+    box-shadow: 0 0 20px var(--neon-yellow);
+}
+
+#btn-x {
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    background: linear-gradient(145deg, #00f3ff, #0066ff);
+}
+
+#btn-x:active,
+#btn-x.active {
+    transform: translateY(-50%) scale(0.92);
+    box-shadow: 0 0 20px var(--neon-blue);
+}
+
+#btn-b {
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    background: linear-gradient(145deg, #ff2a6d, #cc0033);
+}
+
+#btn-b:active,
+#btn-b.active {
+    transform: translateY(-50%) scale(0.92);
+    box-shadow: 0 0 20px var(--neon-red);
+}
+
+#btn-a {
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(145deg, #00ff9d, #00994d);
+}
+
+#btn-a:active,
+#btn-a.active {
+    transform: translateX(-50%) scale(0.92);
+    box-shadow: 0 0 20px var(--neon-green);
+}
+
+
+/* --- MODAL --- */
+.modal-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.modal-backdrop.open {
+    display: flex;
+    opacity: 1;
+}
+
+.modal-content {
+    background: rgba(20, 20, 23, 0.9);
+    width: 90%;
+    max-width: 400px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    padding: 24px;
+    transform: translateY(20px);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.modal-backdrop.open .modal-content {
+    transform: translateY(0);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    letter-spacing: 0.1em;
+    color: var(--text-primary);
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+.icon-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+/* Toggle Switch */
+.setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+.toggle-container {
+    position: relative;
+    width: 48px;
+    height: 28px;
+}
+
+.toggle-container input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-track {
+    position: absolute;
+    inset: 0;
+    background: #333;
+    border-radius: 34px;
+    transition: background 0.3s;
+}
+
+.toggle-knob {
+    position: absolute;
+    height: 22px;
+    width: 22px;
+    left: 3px;
+    bottom: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.3s;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+input:checked+.toggle-track {
+    background: var(--neon-blue);
+}
+
+input:checked+.toggle-track .toggle-knob {
+    transform: translateX(20px);
+}
+
+.setting-description {
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+/* --- ROTATE PROMPT --- */
 #rotate-prompt {
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.95);
     z-index: 9999;
+    background: #000;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    color: #fff;
-    font-size: 1.5rem;
     text-align: center;
-    padding: 2rem;
-}
-
-#rotate-prompt .rotate-icon {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-    animation: rotate-hint 1.5s ease-in-out infinite;
-}
-
-@keyframes rotate-hint {
-
-    0%,
-    100% {
-        transform: rotate(0deg);
-    }
-
-    50% {
-        transform: rotate(90deg);
-    }
+    color: white;
 }
 
 @media (orientation: portrait) {
@@ -76,406 +550,7 @@ body {
         display: flex;
     }
 
-    .zone,
-    #settings-btn {
+    #ui-layer {
         display: none;
-    }
-}
-
-.zone {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex: 1;
-    height: 100%;
-    max-width: 45%;
-}
-
-/* --- SETTINGS BUTTON --- */
-#settings-btn {
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: var(--text-color);
-    font-size: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    z-index: 1001;
-    transition: all 0.2s;
-}
-
-#settings-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-}
-
-/* --- SETTINGS MODAL --- */
-#settings-modal {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.9);
-    z-index: 10000;
-    justify-content: center;
-    align-items: center;
-}
-
-#settings-modal.open {
-    display: flex;
-}
-
-#settings-content {
-    background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
-    border-radius: 16px;
-    padding: 24px 32px;
-    min-width: 280px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-}
-
-#settings-content h2 {
-    color: #fff;
-    margin: 0 0 20px 0;
-    font-size: 1.2rem;
-    text-align: center;
-}
-
-.setting-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.setting-item:last-child {
-    border-bottom: none;
-}
-
-.setting-label {
-    color: var(--text-color);
-    font-size: 0.95rem;
-}
-
-.toggle-switch {
-    position: relative;
-    width: 50px;
-    height: 26px;
-    background: #444;
-    border-radius: 13px;
-    cursor: pointer;
-    transition: background 0.3s;
-}
-
-.toggle-switch.active {
-    background: var(--accent-green);
-}
-
-.toggle-switch::after {
-    content: '';
-    position: absolute;
-    width: 22px;
-    height: 22px;
-    background: #fff;
-    border-radius: 50%;
-    top: 2px;
-    left: 2px;
-    transition: transform 0.3s;
-}
-
-.toggle-switch.active::after {
-    transform: translateX(24px);
-}
-
-#close-settings {
-    display: block;
-    width: 100%;
-    margin-top: 20px;
-    padding: 12px;
-    background: var(--accent-green);
-    border: none;
-    border-radius: 8px;
-    color: #000;
-    font-weight: 600;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: opacity 0.2s;
-}
-
-#close-settings:hover {
-    opacity: 0.9;
-}
-
-/* --- D-PAD --- */
-#dpad-container {
-    position: relative;
-    width: var(--dpad-size);
-    height: var(--dpad-size);
-}
-
-.dpad-btn {
-    position: absolute;
-    width: var(--dpad-btn);
-    height: var(--dpad-btn);
-    background: linear-gradient(145deg, #3a3a3a, #2a2a2a);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    color: var(--text-color);
-    font-size: clamp(16px, 3vmin, 28px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    box-shadow: 5px 5px 10px #111, -5px -5px 10px #444;
-    transition: all 0.1s;
-}
-
-.dpad-btn:active,
-.dpad-btn.active {
-    box-shadow: inset 5px 5px 10px #111, inset -5px -5px 10px #444;
-    color: var(--accent-blue);
-    transform: scale(0.95);
-}
-
-/* D-pad positioning */
-#btn-up {
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    border-radius: 8px 8px 0 0;
-}
-
-#btn-down {
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    border-radius: 0 0 8px 8px;
-}
-
-#btn-left {
-    top: 50%;
-    left: 0;
-    transform: translateY(-50%);
-    border-radius: 8px 0 0 8px;
-}
-
-#btn-right {
-    top: 50%;
-    right: 0;
-    transform: translateY(-50%);
-    border-radius: 0 8px 8px 0;
-}
-
-#dpad-center {
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: calc(var(--dpad-btn) * 1.2);
-    height: calc(var(--dpad-btn) * 1.2);
-    background: transparent;
-    border: none;
-    box-shadow: none;
-    pointer-events: none;
-}
-
-/* --- THUMBSTICK --- */
-#thumbstick-container {
-    display: none;
-    position: relative;
-    width: var(--thumbstick-size);
-    height: var(--thumbstick-size);
-}
-
-#thumbstick-container.visible {
-    display: block;
-}
-
-#thumbstick-base {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
-    border-radius: 50%;
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
-}
-
-#thumbstick-knob {
-    position: absolute;
-    width: 50%;
-    height: 50%;
-    background: linear-gradient(145deg, #4a4a4a, #3a3a3a);
-    border-radius: 50%;
-    border: 2px solid rgba(255, 255, 255, 0.15);
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-    transition: box-shadow 0.1s;
-}
-
-#thumbstick-knob.active {
-    box-shadow: 0 0 20px var(--accent-blue);
-    border-color: var(--accent-blue);
-}
-
-/* --- ACTION BUTTONS (Xbox diamond layout) --- */
-#actions-container {
-    position: relative;
-    width: calc(var(--action-btn) * 3);
-    height: calc(var(--action-btn) * 3);
-}
-
-.action-btn {
-    position: absolute;
-    width: var(--action-btn);
-    height: var(--action-btn);
-    border-radius: 50%;
-    border: 2px solid rgba(255, 255, 255, 0.05);
-    font-weight: 900;
-    font-size: clamp(14px, 2.5vmin, 24px);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    box-shadow: 6px 6px 15px #111;
-    transition: all 0.05s;
-    text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
-}
-
-.action-btn:active,
-.action-btn.active {
-    transform: scale(0.9);
-    box-shadow: inset 3px 3px 8px #000;
-}
-
-/* Xbox diamond layout: Y(top), X(left), B(right), A(bottom) */
-#btn-y {
-    background: linear-gradient(145deg, #b38f00, #806600);
-    color: #fff5cc;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-}
-
-#btn-y.active {
-    background: var(--accent-yellow);
-    box-shadow: 0 0 20px var(--accent-yellow);
-}
-
-#btn-x {
-    background: linear-gradient(145deg, #0050b3, #002a60);
-    color: #cceeff;
-    top: 50%;
-    left: 0;
-    transform: translateY(-50%);
-}
-
-#btn-x.active {
-    background: var(--accent-blue);
-    box-shadow: 0 0 20px var(--accent-blue);
-}
-
-#btn-b {
-    background: linear-gradient(145deg, #b30000, #660000);
-    color: #ffcccc;
-    top: 50%;
-    right: 0;
-    transform: translateY(-50%);
-}
-
-#btn-b.active {
-    background: var(--accent-red);
-    box-shadow: 0 0 20px var(--accent-red);
-}
-
-#btn-a {
-    background: linear-gradient(145deg, #008000, #004d00);
-    color: #ccffcc;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-}
-
-#btn-a.active {
-    background: var(--accent-green);
-    box-shadow: 0 0 20px var(--accent-green);
-}
-
-/* --- CONNECTION STATUS INDICATOR --- */
-#connection-status {
-    position: fixed;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 6px 16px;
-    border-radius: 20px;
-    font-size: clamp(10px, 2vmin, 14px);
-    font-weight: 600;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    transition: all 0.3s ease;
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-#connection-status .dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    animation: pulse 1.5s infinite;
-}
-
-#connection-status.connected {
-    background: rgba(0, 255, 0, 0.15);
-    color: var(--accent-green);
-    border: 1px solid rgba(0, 255, 0, 0.3);
-}
-
-#connection-status.connected .dot {
-    background: var(--accent-green);
-    box-shadow: 0 0 10px var(--accent-green);
-}
-
-#connection-status.disconnected {
-    background: rgba(255, 0, 85, 0.15);
-    color: var(--accent-red);
-    border: 1px solid rgba(255, 0, 85, 0.3);
-}
-
-#connection-status.disconnected .dot {
-    background: var(--accent-red);
-    box-shadow: 0 0 10px var(--accent-red);
-    animation: none;
-}
-
-#connection-status.connecting {
-    background: rgba(255, 170, 0, 0.15);
-    color: #ffaa00;
-    border: 1px solid rgba(255, 170, 0, 0.3);
-}
-
-#connection-status.connecting .dot {
-    background: #ffaa00;
-    box-shadow: 0 0 10px #ffaa00;
-}
-
-@keyframes pulse {
-
-    0%,
-    100% {
-        opacity: 1;
-        transform: scale(1);
-    }
-
-    50% {
-        opacity: 0.6;
-        transform: scale(0.9);
     }
 }

@@ -1,303 +1,257 @@
 /**
- * OpenController - Virtual Xbox Controller JavaScript
- * Features: Multi-touch, D-pad/Thumbstick toggle, ABXY buttons
+ * OpenController - Cyber Series Logic
+ * Features: Floating Joystick, Multi-touch, Haptics
  */
 
 const socket = io();
+
+// State
+const state = {
+    useThumbstick: true, // Default to true (Floating Joystick)
+    activeTouches: new Map() // specialized map for button touches
+};
+
+// DOM Elements
+const els = {
+    zoneLeft: document.getElementById('zone-left'),
+    thumbstickLayer: document.getElementById('thumbstick-layer'),
+    thumbstickBase: document.getElementById('thumbstick-base'),
+    thumbstickKnob: document.getElementById('thumbstick-knob'),
+    dpadContainer: document.getElementById('dpad-container'),
+    settingsModal: document.getElementById('settings-modal'),
+    settingsBtn: document.getElementById('settings-btn'),
+    closeSettings: document.getElementById('close-settings'),
+    inputModeToggle: document.getElementById('input-mode-toggle'),
+    inputModeDesc: document.getElementById('input-mode-desc'),
+    status: document.getElementById('connection-status'),
+    statusText: document.querySelector('#connection-status .text')
+};
+
+// ============================================
+// Haptics Engine
+// ============================================
+const haptics = {
+    tap: () => navigator.vibrate && navigator.vibrate(10), // Ultra short
+    bump: () => navigator.vibrate && navigator.vibrate(15),
+    limit: () => navigator.vibrate && navigator.vibrate(30), // Thud
+};
 
 // ============================================
 // Settings Management
 // ============================================
 
-const settings = {
-    useThumbstick: localStorage.getItem('useThumbstick') === 'true'
-};
-
-function saveSettings() {
-    localStorage.setItem('useThumbstick', settings.useThumbstick);
-}
-
-function applySettings() {
-    const dpad = document.getElementById('dpad-container');
-    const thumbstick = document.getElementById('thumbstick-container');
-    const toggle = document.getElementById('thumbstick-toggle');
-
-    if (settings.useThumbstick) {
-        dpad.style.display = 'none';
-        thumbstick.classList.add('visible');
-        toggle.classList.add('active');
+function toggleInputMode(useStick) {
+    state.useThumbstick = useStick;
+    if (useStick) {
+        els.dpadContainer.style.display = 'none';
+        els.thumbstickLayer.style.display = 'block';
+        els.inputModeDesc.textContent = "Dynamic Stick active. Touch anywhere on left side to move.";
     } else {
-        dpad.style.display = 'block';
-        thumbstick.classList.remove('visible');
-        toggle.classList.remove('active');
+        els.dpadContainer.style.display = 'block';
+        els.thumbstickLayer.style.display = 'none';
+        els.inputModeDesc.textContent = "Standard D-Pad active.";
+    }
+    localStorage.setItem('inputMode', useStick ? 'stick' : 'dpad');
+}
+
+// Load saved settings
+const savedMode = localStorage.getItem('inputMode');
+// Default to D-Pad (false) if no save, or if saved as 'dpad'
+if (savedMode === 'stick') {
+    els.inputModeToggle.checked = true;
+    toggleInputMode(true);
+} else {
+    els.inputModeToggle.checked = false;
+    toggleInputMode(false);
+}
+
+// Event Listeners
+els.settingsBtn.addEventListener('click', () => els.settingsModal.classList.add('open'));
+els.closeSettings.addEventListener('click', () => els.settingsModal.classList.remove('open'));
+els.settingsModal.addEventListener('click', (e) => {
+    if (e.target === els.settingsModal) els.settingsModal.classList.remove('open');
+});
+
+els.inputModeToggle.addEventListener('change', (e) => {
+    toggleInputMode(e.target.checked);
+});
+
+// ============================================
+// Floating Joystick Logic
+// ============================================
+
+let stickTouchId = null;
+let stickCenter = { x: 0, y: 0 };
+const MAX_RADIUS = 50; // Max visual distance in pixels
+
+function initJoystick() {
+    // We attach listeners to the entire left zone
+    els.zoneLeft.addEventListener('touchstart', handleStickStart, { passive: false });
+    els.zoneLeft.addEventListener('touchmove', handleStickMove, { passive: false });
+    els.zoneLeft.addEventListener('touchend', handleStickEnd, { passive: false });
+    els.zoneLeft.addEventListener('touchcancel', handleStickEnd, { passive: false });
+}
+
+function handleStickStart(e) {
+    if (!state.useThumbstick) return; // Ignore if in D-Pad mode
+    e.preventDefault();
+
+    if (stickTouchId !== null) return; // Already active
+
+    // Find the touch that started in this zone
+    // Since we attached to zoneLeft, e.changedTouches should contain it
+    const touch = e.changedTouches[0];
+    if (!touch) return;
+
+    stickTouchId = touch.identifier;
+
+    // Set the anchor point for the joystick
+    stickCenter = { x: touch.clientX, y: touch.clientY };
+
+    // Position the visuals instantly
+    updateStickVisuals(touch.clientX, touch.clientY);
+
+    // Show visuals
+    els.thumbstickLayer.classList.add('active');
+
+    // Feedback
+    haptics.tap();
+}
+
+function handleStickMove(e) {
+    if (!state.useThumbstick || stickTouchId === null) return;
+    e.preventDefault();
+
+    for (let i = 0; i < e.changedTouches.length; i++) {
+        const touch = e.changedTouches[i];
+        if (touch.identifier === stickTouchId) {
+            updateStickLogic(touch.clientX, touch.clientY);
+            break;
+        }
     }
 }
 
-// ============================================
-// Settings Modal
-// ============================================
+function handleStickEnd(e) {
+    if (!state.useThumbstick || stickTouchId === null) return;
 
-document.getElementById('settings-btn').addEventListener('click', () => {
-    document.getElementById('settings-modal').classList.add('open');
-});
-
-document.getElementById('close-settings').addEventListener('click', () => {
-    document.getElementById('settings-modal').classList.remove('open');
-});
-
-document.getElementById('thumbstick-toggle').addEventListener('click', (e) => {
-    settings.useThumbstick = !settings.useThumbstick;
-    saveSettings();
-    applySettings();
-});
-
-// Close modal when clicking outside
-document.getElementById('settings-modal').addEventListener('click', (e) => {
-    if (e.target.id === 'settings-modal') {
-        document.getElementById('settings-modal').classList.remove('open');
-    }
-});
-
-// ============================================
-// Connection Status Handlers
-// ============================================
-
-const statusEl = document.getElementById('connection-status');
-const statusText = statusEl.querySelector('.text');
-
-socket.on('connect', () => {
-    statusEl.className = 'connected';
-    statusText.textContent = 'Connected';
-    setTimeout(() => {
-        if (statusEl.classList.contains('connected')) {
-            statusEl.style.opacity = '0.3';
+    for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === stickTouchId) {
+            resetStick();
+            break;
         }
-    }, 2000);
-});
-
-socket.on('disconnect', () => {
-    statusEl.className = 'disconnected';
-    statusText.textContent = 'Disconnected';
-    statusEl.style.opacity = '1';
-});
-
-socket.on('connect_error', () => {
-    statusEl.className = 'disconnected';
-    statusText.textContent = 'Connection Error';
-    statusEl.style.opacity = '1';
-});
-
-statusEl.addEventListener('mouseenter', () => statusEl.style.opacity = '1');
-statusEl.addEventListener('mouseleave', () => {
-    if (statusEl.classList.contains('connected')) {
-        statusEl.style.opacity = '0.3';
     }
-});
+}
+
+function updateStickLogic(clientX, clientY) {
+    const dx = clientX - stickCenter.x;
+    const dy = clientY - stickCenter.y;
+
+    // Calculate distance
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    // Normalize logic (0.0 to 1.0)
+    // We implicitly define a "full input" radius. Let's say 50px is full speed.
+    // But physically the knob can move up to MAX_RADIUS.
+    let normX = dx / MAX_RADIUS;
+    let normY = dy / MAX_RADIUS;
+
+    // Clamp magnitude to 1.0 for output
+    const mag = Math.sqrt(normX * normX + normY * normY);
+    if (mag > 1.0) {
+        normX /= mag;
+        normY /= mag;
+    }
+
+    // Visual update (capped at MAX_RADIUS)
+    let visX = dx;
+    let visY = dy;
+    if (dist > MAX_RADIUS) {
+        visX = (dx / dist) * MAX_RADIUS;
+        visY = (dy / dist) * MAX_RADIUS;
+        // Optional: haptic bump when hitting edge
+        // (Implementation note: needs state tracking to avoid spamming)
+    }
+
+    updateStickVisuals(stickCenter.x + visX, stickCenter.y + visY);
+
+    // Emit
+    socket.emit('input', { type: 'stick', x: normX, y: normY });
+}
+
+function updateStickVisuals(knobX, knobY) {
+    // Base is always at stickCenter
+    els.thumbstickBase.style.left = stickCenter.x + 'px';
+    els.thumbstickBase.style.top = stickCenter.y + 'px';
+
+    // Knob moves
+    els.thumbstickKnob.style.left = knobX + 'px';
+    els.thumbstickKnob.style.top = knobY + 'px';
+
+    // Directional highlight on knob?
+    // els.thumbstickKnob.classList.add('active'); // It's already active via parent class
+}
+
+function resetStick() {
+    stickTouchId = null;
+    els.thumbstickLayer.classList.remove('active');
+    socket.emit('input', { type: 'stick', x: 0, y: 0 });
+    haptics.tap(); // Release click
+}
 
 // ============================================
-// Context Menu Prevention
+// Button Handling (Multi-touch)
 // ============================================
 
-window.oncontextmenu = (e) => { e.preventDefault(); return false; };
-
-// ============================================
-// Multi-touch Button Handling
-// ============================================
-
-// Track active touches per button
-const activeTouches = new Map();
-
-function setupButtonEvents() {
-    const buttons = document.querySelectorAll('.dpad-btn, .action-btn');
+function initButtons() {
+    const buttons = document.querySelectorAll('.action-btn, .dpad-btn');
 
     buttons.forEach(btn => {
-        const key = btn.getAttribute('data-key');
-        if (!key) return;
+        const key = btn.dataset.key;
 
-        // Touch events with multi-touch support
         btn.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            // Track all touches on this button
-            for (const touch of e.changedTouches) {
-                activeTouches.set(touch.identifier, { key, element: btn });
-            }
-            emit(key, true, btn);
+            e.preventDefault(); // Prevent scroll/zoom
+            haptics.tap();
+            emitBtn(key, true);
+            btn.classList.add('active');
+
+            // Track touches if needed (for complex gestures), 
+            // but CSS :active + class toggle is usually enough for simple buttons
         }, { passive: false });
 
         btn.addEventListener('touchend', (e) => {
             e.preventDefault();
-            for (const touch of e.changedTouches) {
-                activeTouches.delete(touch.identifier);
-            }
-            // Only release if no more touches on this button
-            const stillPressed = [...activeTouches.values()].some(t => t.key === key);
-            if (!stillPressed) {
-                emit(key, false, btn);
-            }
+            emitBtn(key, false);
+            btn.classList.remove('active');
         }, { passive: false });
 
-        btn.addEventListener('touchcancel', (e) => {
-            e.preventDefault();
-            for (const touch of e.changedTouches) {
-                activeTouches.delete(touch.identifier);
-            }
-            emit(key, false, btn);
-        }, { passive: false });
-
-        // Mouse events for desktop testing
-        btn.addEventListener('mousedown', () => emit(key, true, btn));
-        btn.addEventListener('mouseup', () => emit(key, false, btn));
-        btn.addEventListener('mouseleave', () => {
-            if (btn.classList.contains('active')) {
-                emit(key, false, btn);
-            }
-        });
+        // Handle "slide off" cancellation
+        // Use touchmove to check if finger left the element? 
+        // For now, touchend is robust enough for tap buttons.
     });
 }
 
-/**
- * Emit button state to server with visual/haptic feedback
- */
-function emit(btnKey, pressed, element) {
-    if (pressed) {
-        element.classList.add('active');
-        if (navigator.vibrate) {
-            navigator.vibrate(['a', 'b', 'x', 'y'].includes(btnKey) ? 50 : 25);
-        }
-    } else {
-        element.classList.remove('active');
-    }
-    socket.emit('input', { type: 'button', button: btnKey, pressed });
+function emitBtn(key, pressed) {
+    socket.emit('input', { type: 'button', button: key, pressed });
 }
 
 // ============================================
-// Thumbstick Handling
+// Connection & Init
 // ============================================
 
-const thumbstickBase = document.getElementById('thumbstick-base');
-const thumbstickKnob = document.getElementById('thumbstick-knob');
-let thumbstickTouch = null;
-let thumbstickCenter = { x: 0, y: 0 };
-let thumbstickRadius = 0;
-
-function initThumbstick() {
-    const container = document.getElementById('thumbstick-container');
-
-    container.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        if (thumbstickTouch !== null) return;
-
-        const touch = e.changedTouches[0];
-        thumbstickTouch = touch.identifier;
-
-        const rect = thumbstickBase.getBoundingClientRect();
-        thumbstickCenter = {
-            x: rect.left + rect.width / 2,
-            y: rect.top + rect.height / 2
-        };
-        thumbstickRadius = rect.width / 2;
-
-        thumbstickKnob.classList.add('active');
-        updateThumbstick(touch.clientX, touch.clientY);
-    }, { passive: false });
-
-    container.addEventListener('touchmove', (e) => {
-        e.preventDefault();
-        for (const touch of e.changedTouches) {
-            if (touch.identifier === thumbstickTouch) {
-                updateThumbstick(touch.clientX, touch.clientY);
-                break;
-            }
-        }
-    }, { passive: false });
-
-    container.addEventListener('touchend', (e) => {
-        for (const touch of e.changedTouches) {
-            if (touch.identifier === thumbstickTouch) {
-                resetThumbstick();
-                break;
-            }
-        }
-    }, { passive: false });
-
-    container.addEventListener('touchcancel', resetThumbstick, { passive: false });
-
-    // Mouse support for desktop
-    let mouseDown = false;
-    container.addEventListener('mousedown', (e) => {
-        mouseDown = true;
-        const rect = thumbstickBase.getBoundingClientRect();
-        thumbstickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-        thumbstickRadius = rect.width / 2;
-        thumbstickKnob.classList.add('active');
-        updateThumbstick(e.clientX, e.clientY);
-    });
-
-    window.addEventListener('mousemove', (e) => {
-        if (mouseDown) updateThumbstick(e.clientX, e.clientY);
-    });
-
-    window.addEventListener('mouseup', () => {
-        if (mouseDown) {
-            mouseDown = false;
-            resetThumbstick();
-        }
-    });
-}
-
-function updateThumbstick(clientX, clientY) {
-    let dx = clientX - thumbstickCenter.x;
-    let dy = clientY - thumbstickCenter.y;
-
-    // Clamp to circle
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    const maxDistance = thumbstickRadius * 0.8;
-
-    if (distance > maxDistance) {
-        dx = (dx / distance) * maxDistance;
-        dy = (dy / distance) * maxDistance;
-    }
-
-    // Update knob position
-    const knobSize = thumbstickKnob.offsetWidth;
-    thumbstickKnob.style.left = `calc(50% + ${dx}px)`;
-    thumbstickKnob.style.top = `calc(50% + ${dy}px)`;
-
-    // Normalize to -1 to 1
-    const normX = dx / maxDistance;
-    const normY = dy / maxDistance;
-
-    // Send to server
-    socket.emit('input', { type: 'stick', x: normX, y: normY });
-}
-
-function resetThumbstick() {
-    thumbstickTouch = null;
-    thumbstickKnob.classList.remove('active');
-    thumbstickKnob.style.left = '50%';
-    thumbstickKnob.style.top = '50%';
-    thumbstickKnob.style.transform = 'translate(-50%, -50%)';
-    socket.emit('input', { type: 'stick', x: 0, y: 0 });
-}
-
-// ============================================
-// Service Worker Registration (PWA)
-// ============================================
-
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-            .then(reg => console.log('SW registered:', reg.scope))
-            .catch(err => console.log('SW registration failed:', err));
-    });
-}
-
-// ============================================
-// Initialize
-// ============================================
-
-document.addEventListener('DOMContentLoaded', () => {
-    applySettings();
-    setupButtonEvents();
-    initThumbstick();
+socket.on('connect', () => {
+    els.status.className = 'connected';
+    els.statusText.textContent = 'LINKED';
 });
+
+socket.on('disconnect', () => {
+    els.status.className = 'disconnected';
+    els.statusText.textContent = 'OFFLINE';
+});
+
+// Prevent context menu
+window.oncontextmenu = (e) => { e.preventDefault(); return false; };
+
+// Initialize
+initJoystick();
+initButtons();
+console.log('OpenController Cyber v2.0 Initialized');
