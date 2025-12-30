@@ -220,6 +220,12 @@ def status():
     })
 
 
+@app.route('/offline')
+def offline():
+    """Serve the offline fallback page for PWA."""
+    return render_template('offline.html')
+
+
 @app.route('/shutdown', methods=['POST'])
 def shutdown():
     """

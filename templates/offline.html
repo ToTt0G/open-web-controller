@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Offline - OpenController</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#050505">
+
+    <!-- iOS -->
+    <link rel="apple-touch-icon" href="/static/images/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <style>
+        :root {
+            --bg-dark: #050505;
+            --neon-blue: #00f3ff;
+            --neon-red: #ff2a6d;
+            --text-primary: #e0e0e0;
+            --text-muted: #808080;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            background: var(--bg-dark);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            color: var(--text-primary);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .offline-icon {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 30px;
+            color: var(--neon-red);
+            opacity: 0.8;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 0.5;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.05);
+            }
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            letter-spacing: 0.05em;
+        }
+
+        p {
+            color: var(--text-muted);
+            font-size: 1rem;
+            max-width: 400px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .retry-btn {
+            background: linear-gradient(145deg, var(--neon-blue), #0066ff);
+            color: #000;
+            border: none;
+            padding: 14px 32px;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .retry-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.4);
+        }
+
+        .retry-btn:active {
+            transform: scale(0.98);
+        }
+
+        .status-note {
+            position: fixed;
+            bottom: 30px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            opacity: 0.5;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Offline Icon -->
+    <svg class="offline-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <path
+            d="M1 1l22 22M9 9a3 3 0 013 3m-3 3a3 3 0 003-3m5.64-2.36A9 9 0 003.93 7.93M10.59 4.59a9 9 0 018.82 4.82M1.43 10.05A13.94 13.94 0 0112 2c3.18 0 6.17 1.06 8.56 3m-15.12 9a7.96 7.96 0 0111.12 0"
+            stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+
+    <h1>YOU'RE OFFLINE</h1>
+    <p>Can't connect to the controller server. Make sure you're connected to the same network as your PC.</p>
+
+    <button class="retry-btn" onclick="location.reload()">
+        Try Again
+    </button>
+
+    <div class="status-note">
+        OpenController • Waiting for connection
+    </div>
+
+    <script>
+        // Auto-retry when connection is restored
+        window.addEventListener('online', () => {
+            location.reload();
+        });
+    </script>
+</body>
+
+</html>

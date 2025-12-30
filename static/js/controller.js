@@ -1,6 +1,6 @@
 /**
  * OpenController - Cyber Series Logic
- * Features: Floating Joystick, Multi-touch, Haptics
+ * Features: Floating Joystick, Multi-touch, Haptics, Wake Lock, Install Prompt
  */
 
 const socket = io();
@@ -8,7 +8,9 @@ const socket = io();
 // State
 const state = {
     useThumbstick: true, // Default to true (Floating Joystick)
-    activeTouches: new Map() // specialized map for button touches
+    activeTouches: new Map(), // specialized map for button touches
+    wakeLockEnabled: true,
+    wakeLock: null
 };
 
 // DOM Elements
@@ -23,8 +25,14 @@ const els = {
     closeSettings: document.getElementById('close-settings'),
     inputModeToggle: document.getElementById('input-mode-toggle'),
     inputModeDesc: document.getElementById('input-mode-desc'),
+    wakeLockToggle: document.getElementById('wakelock-toggle'),
+    wakeLockDesc: document.getElementById('wakelock-desc'),
     status: document.getElementById('connection-status'),
-    statusText: document.querySelector('#connection-status .text')
+    statusText: document.querySelector('#connection-status .text'),
+    offlineIndicator: document.getElementById('offline-indicator'),
+    installPrompt: document.getElementById('install-prompt'),
+    installBtn: document.getElementById('install-btn'),
+    installDismiss: document.getElementById('install-dismiss')
 };
 
 // ============================================
@@ -35,6 +43,126 @@ const haptics = {
     bump: () => navigator.vibrate && navigator.vibrate(15),
     limit: () => navigator.vibrate && navigator.vibrate(30), // Thud
 };
+
+// ============================================
+// Wake Lock API - Prevent Screen Sleep
+// ============================================
+
+async function requestWakeLock() {
+    if (!('wakeLock' in navigator) || !state.wakeLockEnabled) {
+        return;
+    }
+
+    try {
+        state.wakeLock = await navigator.wakeLock.request('screen');
+        console.log('Wake Lock: Active');
+
+        state.wakeLock.addEventListener('release', () => {
+            console.log('Wake Lock: Released');
+        });
+    } catch (err) {
+        console.log('Wake Lock failed:', err.message);
+    }
+}
+
+async function releaseWakeLock() {
+    if (state.wakeLock) {
+        await state.wakeLock.release();
+        state.wakeLock = null;
+    }
+}
+
+// Re-acquire wake lock on visibility change
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && state.wakeLockEnabled) {
+        requestWakeLock();
+    }
+});
+
+// Handle wake lock toggle
+if (els.wakeLockToggle) {
+    const savedWakeLock = localStorage.getItem('wakeLockEnabled');
+    state.wakeLockEnabled = savedWakeLock !== 'false'; // Default true
+    els.wakeLockToggle.checked = state.wakeLockEnabled;
+
+    els.wakeLockToggle.addEventListener('change', (e) => {
+        state.wakeLockEnabled = e.target.checked;
+        localStorage.setItem('wakeLockEnabled', state.wakeLockEnabled);
+
+        if (state.wakeLockEnabled) {
+            requestWakeLock();
+            els.wakeLockDesc.textContent = 'Prevents screen from sleeping during use.';
+        } else {
+            releaseWakeLock();
+            els.wakeLockDesc.textContent = 'Screen may sleep during inactivity.';
+        }
+    });
+}
+
+// ============================================
+// Install Prompt (beforeinstallprompt)
+// ============================================
+
+let deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+
+    // Show custom install prompt
+    if (els.installPrompt) {
+        els.installPrompt.classList.remove('hidden');
+    }
+});
+
+if (els.installBtn) {
+    els.installBtn.addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log('Install prompt outcome:', outcome);
+
+        deferredPrompt = null;
+        els.installPrompt.classList.add('hidden');
+    });
+}
+
+if (els.installDismiss) {
+    els.installDismiss.addEventListener('click', () => {
+        els.installPrompt.classList.add('hidden');
+        // Don't show again this session
+        sessionStorage.setItem('installDismissed', 'true');
+    });
+}
+
+// Hide if already dismissed this session
+if (sessionStorage.getItem('installDismissed')) {
+    els.installPrompt?.classList.add('hidden');
+}
+
+// Handle successful installation
+window.addEventListener('appinstalled', () => {
+    console.log('PWA installed successfully');
+    els.installPrompt?.classList.add('hidden');
+    deferredPrompt = null;
+});
+
+// ============================================
+// Online/Offline Detection
+// ============================================
+
+function updateOnlineStatus() {
+    if (navigator.onLine) {
+        els.offlineIndicator?.classList.add('hidden');
+    } else {
+        els.offlineIndicator?.classList.remove('hidden');
+    }
+}
+
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+updateOnlineStatus(); // Initial check
 
 // ============================================
 // Settings Management
@@ -63,6 +191,14 @@ if (savedMode === 'stick') {
 } else {
     els.inputModeToggle.checked = false;
     toggleInputMode(false);
+}
+
+// Check URL for settings param (from PWA shortcut)
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('settings') === 'open') {
+    els.settingsModal.classList.add('open');
+    // Clean URL
+    history.replaceState({}, '', '/');
 }
 
 // Event Listeners
@@ -241,11 +377,21 @@ function emitBtn(key, pressed) {
 socket.on('connect', () => {
     els.status.className = 'connected';
     els.statusText.textContent = 'LINKED';
+
+    // Request wake lock when connected
+    if (state.wakeLockEnabled) {
+        requestWakeLock();
+    }
 });
 
 socket.on('disconnect', () => {
     els.status.className = 'disconnected';
     els.statusText.textContent = 'OFFLINE';
+});
+
+socket.on('connect_error', () => {
+    els.status.className = 'connecting';
+    els.statusText.textContent = 'RETRYING';
 });
 
 // Prevent context menu
@@ -254,4 +400,4 @@ window.oncontextmenu = (e) => { e.preventDefault(); return false; };
 // Initialize
 initJoystick();
 initButtons();
-console.log('OpenController Cyber v2.0 Initialized');
+console.log('OpenController Cyber v3.0 Initialized');

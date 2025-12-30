@@ -2,7 +2,9 @@
     "id": "/",
     "name": "OpenController",
     "short_name": "OController",
-    "description": "Virtual Xbox Controller for your PC",
+    "description": "Turn your phone into a virtual Xbox controller. Connect to your PC and play games with touch controls, featuring a floating joystick, haptic feedback, and full ABXY button support.",
+    "lang": "en",
+    "dir": "ltr",
     "start_url": "/",
     "scope": "/",
     "display": "fullscreen",
@@ -11,14 +13,32 @@
         "standalone",
         "minimal-ui"
     ],
-    "background_color": "#1a1a1a",
-    "theme_color": "#1a1a1a",
+    "background_color": "#050505",
+    "theme_color": "#050505",
     "orientation": "landscape",
     "categories": [
         "games",
         "utilities"
     ],
     "prefer_related_applications": false,
+    "handle_links": "preferred",
+    "launch_handler": {
+        "client_mode": "navigate-existing"
+    },
+    "shortcuts": [
+        {
+            "name": "Settings",
+            "short_name": "Settings",
+            "description": "Open controller settings",
+            "url": "/?settings=open",
+            "icons": [
+                {
+                    "src": "/static/images/icon-192.png",
+                    "sizes": "192x192"
+                }
+            ]
+        }
+    ],
     "icons": [
         {
             "src": "/static/images/icon-192.png",
@@ -37,6 +57,15 @@
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "maskable"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "/static/images/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "form_factor": "wide",
+            "label": "OpenController - Virtual Xbox Gamepad"
         }
     ]
 }
