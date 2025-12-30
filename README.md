@@ -8,14 +8,16 @@ A web-based virtual Xbox 360 controller that runs on your PC and can be accessed
 
 ## ✨ Features
 
-- **🎯 Full ABXY Buttons** - Complete Xbox diamond layout (A, B, X, Y)
-- **🕹️ D-Pad & Thumbstick** - Toggle between D-pad and analog thumbstick in settings
-- **👆 Multi-Touch** - Press multiple buttons simultaneously
-- **🌐 PWA Support** - Install as an app on your phone
-- **🔌 Real-time** - Low-latency WebSocket connection
+- **🎯 Full Xbox Controls** - ABXY buttons in authentic Xbox diamond layout
+- **🕹️ Dual Input Modes** - Switch between D-pad and floating analog thumbstick
+- **👆 Multi-Touch Support** - Press multiple buttons simultaneously
+- **🌐 PWA Ready** - Install as a standalone app on iOS & Android
+- **🔒 HTTPS Support** - Auto-generated self-signed SSL certificates
+- **🔌 Real-time Input** - Low-latency WebSocket connection via Socket.IO
 - **📶 Connection Status** - Visual indicator shows connection state
-- **📳 Haptic Feedback** - Vibration on button presses
-- **⚙️ Settings Menu** - Customize your experience
+- **📳 Haptic Feedback** - Vibration on button presses (mobile)
+- **⚙️ Settings Menu** - Customize thumbstick/D-pad, haptics, and more
+- **🛡️ Safe Shutdown** - Graceful cleanup of virtual controller on exit
 
 ## 🎯 Controls
 
@@ -34,33 +36,43 @@ A web-based virtual Xbox 360 controller that runs on your PC and can be accessed
 - **Python 3.8+**
 - **[ViGEmBus Driver](https://github.com/ViGEm/ViGEmBus/releases)** - Required for virtual gamepad
 
-## 🚀 Installation
+## 🚀 Quick Start
 
-1. **Install ViGEmBus Driver**
-   - Download from [ViGEmBus Releases](https://github.com/ViGEm/ViGEmBus/releases)
-   - Run the installer and restart if prompted
+### 1. Install ViGEmBus Driver
+Download from [ViGEmBus Releases](https://github.com/ViGEm/ViGEmBus/releases) and run the installer.
 
-2. **Clone the repository**
-   ```bash
-   git clone https://github.com/ToTt0G/open-web-controller.git
-   cd open-web-controller
-   ```
+### 2. Clone & Install
+```bash
+git clone https://github.com/ToTt0G/open-web-controller.git
+cd open-web-controller
+pip install -r requirements.txt
+```
 
-3. **Install Python dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
+### 3. Run the Server
+```bash
+python app.py
+```
 
-4. **Run the server**
-   ```bash
-   python app.py
-   ```
+### 4. Connect from Your Phone
+1. Find your PC's local IP (shown in the terminal, or run `ipconfig`)
+2. Open `https://<your-ip>:5000` on your phone
+3. Accept the self-signed certificate warning
+4. Tap ⚙️ to access settings
+5. **Add to home screen** for the best fullscreen experience!
 
-5. **Connect from your phone**
-   - Find your PC's local IP (run `ipconfig` in terminal)
-   - Open `http://<your-ip>:5000` on your phone
-   - Tap ⚙️ to access settings
-   - **Add to home screen** for the best experience!
+## 📱 Install as App (PWA)
+
+For the best experience, install the controller as a Progressive Web App:
+
+**Android (Chrome):**
+1. Open the controller URL in Chrome
+2. Tap the menu (⋮) → "Add to Home Screen"
+3. Launch from your home screen for fullscreen mode
+
+**iOS (Safari):**
+1. Open the controller URL in Safari
+2. Tap the Share button → "Add to Home Screen"
+3. Launch from your home screen
 
 ## 📁 Project Structure
 
@@ -70,19 +82,38 @@ open-web-controller/
 ├── requirements.txt        # Python dependencies
 ├── templates/
 │   └── index.html          # Controller HTML
-└── static/
-    ├── css/style.css       # Controller styling
-    ├── js/controller.js    # Client-side logic
-    ├── icons/icon.svg      # PWA icon
-    └── sw.js               # Service worker for PWA
+├── static/
+│   ├── css/style.css       # Controller styling
+│   ├── js/controller.js    # Client-side logic
+│   ├── icons/              # PWA icons
+│   ├── manifest.json       # PWA manifest
+│   └── sw.js               # Service worker for PWA
+└── certs/                  # Auto-generated SSL certificates (git-ignored)
 ```
 
 ## 🛠️ Tech Stack
 
-- **Backend**: Flask + Flask-SocketIO
-- **Frontend**: Vanilla HTML/CSS/JS
-- **Virtual Gamepad**: vgamepad (ViGEmBus wrapper)
-- **Real-time**: Socket.IO
+| Component | Technology |
+|-----------|------------|
+| Backend | Flask + Flask-SocketIO |
+| Frontend | Vanilla HTML/CSS/JS |
+| Virtual Gamepad | vgamepad (ViGEmBus wrapper) |
+| Real-time | Socket.IO (WebSocket) |
+| SSL | Self-signed certificates (auto-generated) |
+
+## 🔧 Configuration
+
+The server automatically:
+- Detects your local IP address
+- Generates SSL certificates on first run (stored in `certs/`)
+- Runs on port `5000` by default
+
+## 🛑 Shutting Down
+
+The server handles shutdown gracefully:
+- Press `Ctrl+C` to stop the server
+- Virtual controller is automatically disconnected
+- All resources are cleaned up properly
 
 ## 🤝 Contributing
 
