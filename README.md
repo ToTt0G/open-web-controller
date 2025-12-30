@@ -5,6 +5,7 @@ A web-based virtual Xbox 360 controller that runs on your PC and can be accessed
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
+![PWA](https://img.shields.io/badge/PWA-ready-blueviolet)
 
 ## ✨ Features
 
@@ -18,6 +19,14 @@ A web-based virtual Xbox 360 controller that runs on your PC and can be accessed
 - **📳 Haptic Feedback** - Vibration on button presses (mobile)
 - **⚙️ Settings Menu** - Customize thumbstick/D-pad, haptics, and more
 - **🛡️ Safe Shutdown** - Graceful cleanup of virtual controller on exit
+
+### 🆕 PWA Enhancements
+
+- **📱 Custom Install Prompt** - Beautiful "Add to Home Screen" UI
+- **📴 Offline Support** - Custom offline page when disconnected
+- **🔄 Auto-Updates** - Get notified when a new version is available
+- **💡 Wake Lock** - Screen stays on during gameplay (no dimming!)
+- **⚡ Instant Load** - Assets cached for lightning-fast startup
 
 ## 🎯 Controls
 
@@ -66,13 +75,16 @@ For the best experience, install the controller as a Progressive Web App:
 
 **Android (Chrome):**
 1. Open the controller URL in Chrome
-2. Tap the menu (⋮) → "Add to Home Screen"
-3. Launch from your home screen for fullscreen mode
+2. Look for the **"Install OpenController"** prompt at the bottom
+3. Tap **INSTALL** or use menu (⋮) → "Add to Home Screen"
+4. Launch from your home screen for fullscreen mode
 
 **iOS (Safari):**
 1. Open the controller URL in Safari
 2. Tap the Share button → "Add to Home Screen"
 3. Launch from your home screen
+
+> 💡 **Tip:** The app works offline! If you lose connection, you'll see a friendly offline page with a retry button.
 
 ## 📁 Project Structure
 
@@ -81,13 +93,14 @@ open-web-controller/
 ├── app.py                  # Flask server & gamepad logic
 ├── requirements.txt        # Python dependencies
 ├── templates/
-│   └── index.html          # Controller HTML
+│   ├── index.html          # Controller HTML
+│   └── offline.html        # Offline fallback page
 ├── static/
 │   ├── css/style.css       # Controller styling
 │   ├── js/controller.js    # Client-side logic
-│   ├── icons/              # PWA icons
+│   ├── images/             # PWA icons
 │   ├── manifest.json       # PWA manifest
-│   └── sw.js               # Service worker for PWA
+│   └── sw.js               # Service worker
 └── certs/                  # Auto-generated SSL certificates (git-ignored)
 ```
 
@@ -100,6 +113,7 @@ open-web-controller/
 | Virtual Gamepad | vgamepad (ViGEmBus wrapper) |
 | Real-time | Socket.IO (WebSocket) |
 | SSL | Self-signed certificates (auto-generated) |
+| PWA | Service Worker + Web App Manifest |
 
 ## 🔧 Configuration
 
@@ -107,6 +121,10 @@ The server automatically:
 - Detects your local IP address
 - Generates SSL certificates on first run (stored in `certs/`)
 - Runs on port `5000` by default
+
+### Settings (in-app)
+- **Input Mode** - Toggle between floating thumbstick and D-pad
+- **Wake Lock** - Prevent screen from sleeping during use
 
 ## 🛑 Shutting Down
 
