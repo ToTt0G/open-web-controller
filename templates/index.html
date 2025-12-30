@@ -2,30 +2,44 @@
 <html lang="en">
 
 <head>
-    <title>OpenController</title>
     <meta charset="UTF-8">
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <!-- PWA Meta Tags -->
-    <meta name="mobile-web-app-capable" content="yes">
+    <title>OpenController</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/static/manifest.json">
+
+    <!-- iOS PWA Support (required - Safari doesn't fully use manifest) -->
+    <link rel="apple-touch-icon" href="/static/images/apple-touch-icon.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="OController">
-    <meta name="application-name" content="OpenController">
-    <meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)">
-    <meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: light)">
+
+    <!-- Android/Chrome -->
+    <meta name="theme-color" content="#1a1a1a">
+    <meta name="mobile-web-app-capable" content="yes">
+
+    <!-- General -->
     <meta name="description" content="Virtual Xbox Controller for your PC">
     <meta name="format-detection" content="telephone=no">
-    <meta name="msapplication-tap-highlight" content="no">
-    <!-- PWA Links -->
-    <link rel="manifest" href="/manifest.json">
-    <link rel="icon" type="image/svg+xml" href="/static/icons/icon.svg">
-    <link rel="apple-touch-icon" href="/static/icons/icon.svg">
-    <!-- Splash screen for iOS -->
-    <meta name="apple-mobile-web-app-orientations" content="landscape">
-    <!-- Styles & Scripts -->
+    <link rel="icon" type="image/png" href="/static/images/icon-192.png">
+
+    <!-- Styles -->
     <link rel="stylesheet" href="/static/css/style.css">
+
+    <!-- Socket.IO -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+
+    <!-- Service Worker Registration (inline for reliability) -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('SW Registered!', reg.scope))
+                .catch(err => console.log('SW Failed', err));
+        }
+    </script>
+
     <style>
         /* iOS safe area handling */
         body {
