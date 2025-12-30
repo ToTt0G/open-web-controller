@@ -28,6 +28,7 @@ A web-based virtual Xbox 360 controller that runs on your PC and can be accessed
 - **💡 Wake Lock** - Screen stays on during gameplay (no dimming!)
 - **⚡ Instant Load** - Assets cached for lightning-fast startup
 
+
 ## 🎯 Controls
 
 | Control | Xbox Input |
@@ -38,6 +39,10 @@ A web-based virtual Xbox 360 controller that runs on your PC and can be accessed
 | B (red) | B button |
 | X (blue) | X button |
 | Y (yellow) | Y button |
+| SELECT | Back button |
+| START | Start button |
+| Guide (center) | Xbox Guide button |
+
 
 ## 📋 Requirements
 
@@ -137,7 +142,7 @@ The server handles shutdown gracefully:
 
 Contributions are welcome! Some ideas for improvements:
 
-- [ ] Add Start/Select/Menu buttons
+- [x] Add Start/Select/Menu buttons
 - [ ] Add shoulder buttons (LB, RB, LT, RT)
 - [ ] Right thumbstick support
 - [ ] Customizable button layout

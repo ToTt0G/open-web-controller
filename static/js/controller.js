@@ -339,7 +339,7 @@ function resetStick() {
 // ============================================
 
 function initButtons() {
-    const buttons = document.querySelectorAll('.action-btn, .dpad-btn');
+    const buttons = document.querySelectorAll('.action-btn, .dpad-btn, .system-btn');
 
     buttons.forEach(btn => {
         const key = btn.dataset.key;

@@ -412,6 +412,75 @@ body {
 }
 
 
+/* --- CENTER ZONE (System Buttons) --- */
+.center-zone {
+    flex: 0 0 auto;
+    width: 140px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.system-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.system-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #888;
+    padding: 10px 16px;
+    border-radius: 20px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    cursor: pointer;
+    transition: all 0.15s;
+    min-width: 90px;
+}
+
+.system-btn:active,
+.system-btn.active {
+    background: #333;
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: scale(0.95);
+}
+
+/* Guide/Xbox Button - Special styling */
+.guide-btn {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    padding: 0;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    color: #666;
+}
+
+.guide-btn:active,
+.guide-btn.active {
+    color: var(--neon-green);
+    border-color: var(--neon-green);
+    box-shadow: 0 0 20px rgba(0, 255, 157, 0.3);
+    transform: scale(0.95);
+}
+
+.guide-btn svg {
+    width: 24px;
+    height: 24px;
+}
+
+
 /* --- MODAL --- */
 .modal-backdrop {
     display: none;
