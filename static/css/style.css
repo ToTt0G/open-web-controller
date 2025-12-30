@@ -1,0 +1,223 @@
+/* OpenController - Virtual Xbox Controller Styles */
+
+:root {
+    --bg-color: #1a1a1a;
+    --btn-color: #333;
+    --btn-active: #444;
+    --accent-green: #00ff00;
+    --accent-red: #ff0055;
+    --accent-blue: #00ccff;
+    --text-color: rgba(255, 255, 255, 0.8);
+    /* Responsive sizing based on viewport */
+    --dpad-size: clamp(140px, 25vmin, 220px);
+    --dpad-btn: clamp(40px, 7vmin, 70px);
+    --action-btn: clamp(60px, 12vmin, 100px);
+}
+
+* { box-sizing: border-box; }
+
+body {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    padding: 0 5vw;
+    background: radial-gradient(circle at center, #2a2a2a, #000);
+    touch-action: none;
+    overflow: hidden;
+    font-family: 'Segoe UI', sans-serif;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* Portrait mode overlay - prompts rotation */
+#rotate-prompt {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.95);
+    z-index: 9999;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #fff;
+    font-size: 1.5rem;
+    text-align: center;
+    padding: 2rem;
+}
+#rotate-prompt .rotate-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    animation: rotate-hint 1.5s ease-in-out infinite;
+}
+@keyframes rotate-hint {
+    0%, 100% { transform: rotate(0deg); }
+    50% { transform: rotate(90deg); }
+}
+@media (orientation: portrait) {
+    #rotate-prompt { display: flex; }
+    .zone { display: none; }
+}
+
+.zone {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 1;
+    height: 100%;
+    max-width: 45%;
+}
+
+/* --- D-PAD --- */
+#dpad-container {
+    position: relative;
+    width: var(--dpad-size);
+    height: var(--dpad-size);
+}
+
+.dpad-btn {
+    position: absolute;
+    width: var(--dpad-btn);
+    height: var(--dpad-btn);
+    background: linear-gradient(145deg, #3a3a3a, #2a2a2a);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: var(--text-color);
+    font-size: clamp(16px, 3vmin, 28px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 5px 5px 10px #111, -5px -5px 10px #444;
+    transition: all 0.1s;
+}
+
+.dpad-btn:active, .dpad-btn.active {
+    box-shadow: inset 5px 5px 10px #111, inset -5px -5px 10px #444;
+    color: var(--accent-blue);
+    transform: scale(0.95);
+}
+
+/* D-pad positioning */
+#btn-up    { top: 0; left: 50%; transform: translateX(-50%); border-radius: 8px 8px 0 0; }
+#btn-down  { bottom: 0; left: 50%; transform: translateX(-50%); border-radius: 0 0 8px 8px; }
+#btn-left  { top: 50%; left: 0; transform: translateY(-50%); border-radius: 8px 0 0 8px; }
+#btn-right { top: 50%; right: 0; transform: translateY(-50%); border-radius: 0 8px 8px 0; }
+#dpad-center { 
+    top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: calc(var(--dpad-btn) * 1.2); height: calc(var(--dpad-btn) * 1.2); 
+    background: transparent; border: none; box-shadow: none; pointer-events: none;
+}
+
+/* --- ACTION BUTTONS --- */
+#actions-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(20px, 5vmin, 50px);
+}
+
+.action-btn {
+    position: relative;
+    width: var(--action-btn);
+    height: var(--action-btn);
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.05);
+    font-weight: 900;
+    font-size: clamp(16px, 3vmin, 28px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 6px 6px 15px #111;
+    transition: all 0.05s;
+    text-shadow: 0 0 5px rgba(0,0,0,0.5);
+}
+
+.action-btn:active, .action-btn.active {
+    transform: scale(0.9);
+    box-shadow: inset 3px 3px 8px #000;
+}
+
+#btn-a {
+    background: linear-gradient(145deg, #008000, #004d00);
+    color: #ccffcc;
+    order: 2;
+}
+#btn-a:active { background: var(--accent-green); box-shadow: 0 0 20px var(--accent-green); }
+
+#btn-x {
+    background: linear-gradient(145deg, #0050b3, #002a60);
+    color: #cceeff;
+    order: 1;
+}
+#btn-x:active { background: var(--accent-blue); box-shadow: 0 0 20px var(--accent-blue); }
+
+/* --- CENTER DECORATION --- */
+.brand {
+    font-size: clamp(10px, 2vmin, 16px);
+    letter-spacing: 2px;
+    color: rgba(255,255,255,0.1);
+    text-transform: uppercase;
+    transform: rotate(90deg);
+}
+
+/* --- CONNECTION STATUS INDICATOR --- */
+#connection-status {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: clamp(10px, 2vmin, 14px);
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+#connection-status .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+}
+#connection-status.connected {
+    background: rgba(0, 255, 0, 0.15);
+    color: var(--accent-green);
+    border: 1px solid rgba(0, 255, 0, 0.3);
+}
+#connection-status.connected .dot {
+    background: var(--accent-green);
+    box-shadow: 0 0 10px var(--accent-green);
+}
+#connection-status.disconnected {
+    background: rgba(255, 0, 85, 0.15);
+    color: var(--accent-red);
+    border: 1px solid rgba(255, 0, 85, 0.3);
+}
+#connection-status.disconnected .dot {
+    background: var(--accent-red);
+    box-shadow: 0 0 10px var(--accent-red);
+    animation: none;
+}
+#connection-status.connecting {
+    background: rgba(255, 170, 0, 0.15);
+    color: #ffaa00;
+    border: 1px solid rgba(255, 170, 0, 0.3);
+}
+#connection-status.connecting .dot {
+    background: #ffaa00;
+    box-shadow: 0 0 10px #ffaa00;
+}
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.9); }
+}

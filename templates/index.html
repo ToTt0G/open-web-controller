@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>OpenController</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="OController">
+    <meta name="theme-color" content="#00ff00">
+    <meta name="description" content="Virtual Xbox Controller for your PC">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/svg+xml" href="/static/icons/icon.svg">
+    <link rel="apple-touch-icon" href="/static/icons/icon.svg">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+</head>
+<body>
+
+    <!-- Connection Status Indicator -->
+    <div id="connection-status" class="connecting">
+        <span class="dot"></span>
+        <span class="text">Connecting...</span>
+    </div>
+
+    <!-- Portrait mode warning overlay -->
+    <div id="rotate-prompt">
+        <div class="rotate-icon">📱</div>
+        <div>Please rotate your device</div>
+        <div style="font-size: 1rem; opacity: 0.7; margin-top: 0.5rem;">Landscape mode required</div>
+    </div>
+
+    <div class="zone">
+        <div id="dpad-container">
+            <div id="btn-up"    class="dpad-btn" data-key="up">▲</div>
+            <div id="btn-left"  class="dpad-btn" data-key="left">◀</div>
+            <div id="dpad-center"></div>
+            <div id="btn-right" class="dpad-btn" data-key="right">▶</div>
+            <div id="btn-down"  class="dpad-btn" data-key="down">▼</div>
+        </div>
+    </div>
+
+    <div class="zone">
+        <div id="actions-container">
+            <div id="btn-x" class="action-btn" data-key="x">X</div>
+            <div id="btn-a" class="action-btn" data-key="a">A</div>
+        </div>
+    </div>
+
+    <script src="/static/js/controller.js"></script>
+</body>
+</html>
