@@ -3,12 +3,13 @@
  * Enables offline functionality and PWA installation
  */
 
-const CACHE_NAME = 'opencontroller-v1';
+const CACHE_NAME = 'opencontroller-v2';
 const urlsToCache = [
     '/',
     '/static/css/style.css',
     '/static/js/controller.js',
-    '/static/icons/icon.svg'
+    '/static/icons/icon.svg',
+    '/manifest.json'
 ];
 
 self.addEventListener('install', event => {
@@ -20,6 +21,11 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('fetch', event => {
+    // Don't cache socket.io requests
+    if (event.request.url.includes('socket.io')) {
+        return;
+    }
+
     event.respondWith(
         caches.match(event.request)
             .then(response => response || fetch(event.request))

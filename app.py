@@ -20,7 +20,9 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 # Button mapping dictionary for cleaner input handling
 BUTTON_MAP = {
     'a': vg.XUSB_BUTTON.XUSB_GAMEPAD_A,
+    'b': vg.XUSB_BUTTON.XUSB_GAMEPAD_B,
     'x': vg.XUSB_BUTTON.XUSB_GAMEPAD_X,
+    'y': vg.XUSB_BUTTON.XUSB_GAMEPAD_Y,
     'up': vg.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_UP,
     'down': vg.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_DOWN,
     'left': vg.XUSB_BUTTON.XUSB_GAMEPAD_DPAD_LEFT,
@@ -36,7 +38,7 @@ MANIFEST = {
     "display": "fullscreen",
     "orientation": "landscape",
     "background_color": "#1a1a1a",
-    "theme_color": "#00ff00",
+    "theme_color": "#1a1a1a",
     "icons": [
         {"src": "/static/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}
     ]
@@ -59,26 +61,50 @@ def manifest():
     return jsonify(MANIFEST)
 
 
+@app.route('/sw.js')
+def service_worker():
+    """Serve service worker from root path for proper scope."""
+    return send_from_directory('static', 'sw.js', mimetype='application/javascript')
+
+
 # ============================================
 # Socket.IO Event Handlers
 # ============================================
 
 @socketio.on('input')
 def handle_input(data):
-    """Handle button input from web client using dictionary-based mapping."""
-    btn = data.get('button')
-    pressed = data.get('pressed', False)
+    """Handle input from web client (buttons and thumbstick)."""
+    input_type = data.get('type', 'button')
     
-    # Look up button in mapping dictionary
-    xbox_button = BUTTON_MAP.get(btn)
-    if xbox_button is None:
-        return  # Unknown button, ignore
+    if input_type == 'button':
+        btn = data.get('button')
+        pressed = data.get('pressed', False)
+        
+        # Look up button in mapping dictionary
+        xbox_button = BUTTON_MAP.get(btn)
+        if xbox_button is None:
+            return  # Unknown button, ignore
+        
+        # Press or release the mapped button
+        if pressed:
+            gamepad.press_button(button=xbox_button)
+        else:
+            gamepad.release_button(button=xbox_button)
     
-    # Press or release the mapped button
-    if pressed:
-        gamepad.press_button(button=xbox_button)
-    else:
-        gamepad.release_button(button=xbox_button)
+    elif input_type == 'stick':
+        # Handle thumbstick input (-1.0 to 1.0)
+        x = data.get('x', 0)
+        y = data.get('y', 0)
+        
+        # Convert to int16 range (-32768 to 32767)
+        stick_x = int(x * 32767)
+        stick_y = int(-y * 32767)  # Invert Y axis (up is negative in web)
+        
+        # Clamp values
+        stick_x = max(-32768, min(32767, stick_x))
+        stick_y = max(-32768, min(32767, stick_y))
+        
+        gamepad.left_joystick(x_value=stick_x, y_value=stick_y)
     
     gamepad.update()
 
@@ -88,7 +114,10 @@ def handle_input(data):
 # ============================================
 
 if __name__ == '__main__':
-    # '0.0.0.0' allows external connections (your phone)
-    print("Starting OpenController server...")
-    print("Access the controller at: http://<your-ip>:5000")
+    print("=" * 50)
+    print("  OpenController - Virtual Xbox Controller")
+    print("=" * 50)
+    print(f"\n  Server running at: http://0.0.0.0:5000")
+    print(f"  Access from phone: http://<your-pc-ip>:5000")
+    print("\n  Press Ctrl+C to stop\n")
     socketio.run(app, host='0.0.0.0', port=5000)

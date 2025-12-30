@@ -8,20 +8,25 @@ A web-based virtual Xbox 360 controller that runs on your PC and can be accessed
 
 ## ✨ Features
 
-- **🌐 Web-Based** - No app installation needed, works in any modern browser
-- **📱 PWA Support** - Install as an app on your phone for a native experience
-- **🔌 Real-time** - Low-latency WebSocket connection for responsive controls
+- **🎯 Full ABXY Buttons** - Complete Xbox diamond layout (A, B, X, Y)
+- **🕹️ D-Pad & Thumbstick** - Toggle between D-pad and analog thumbstick in settings
+- **👆 Multi-Touch** - Press multiple buttons simultaneously
+- **🌐 PWA Support** - Install as an app on your phone
+- **🔌 Real-time** - Low-latency WebSocket connection
 - **📶 Connection Status** - Visual indicator shows connection state
-- **📳 Haptic Feedback** - Vibration feedback on button presses (on supported devices)
-- **🔄 Landscape Lock** - Optimized for landscape orientation with rotation prompt
+- **📳 Haptic Feedback** - Vibration on button presses
+- **⚙️ Settings Menu** - Customize your experience
 
 ## 🎯 Controls
 
-| Control | Xbox Button |
-|---------|-------------|
+| Control | Xbox Input |
+|---------|------------|
 | D-Pad ▲▼◀▶ | D-Pad directions |
-| A Button | A |
-| X Button | X |
+| Thumbstick | Left analog stick |
+| A (green) | A button |
+| B (red) | B button |
+| X (blue) | X button |
+| Y (yellow) | Y button |
 
 ## 📋 Requirements
 
@@ -54,7 +59,8 @@ A web-based virtual Xbox 360 controller that runs on your PC and can be accessed
 5. **Connect from your phone**
    - Find your PC's local IP (run `ipconfig` in terminal)
    - Open `http://<your-ip>:5000` on your phone
-   - Add to home screen for the best experience!
+   - Tap ⚙️ to access settings
+   - **Add to home screen** for the best experience!
 
 ## 📁 Project Structure
 
@@ -82,8 +88,9 @@ open-web-controller/
 
 Contributions are welcome! Some ideas for improvements:
 
-- [ ] Add more buttons (Y, B, Start, Select, triggers)
-- [ ] Add analog joystick support
+- [ ] Add Start/Select/Menu buttons
+- [ ] Add shoulder buttons (LB, RB, LT, RT)
+- [ ] Right thumbstick support
 - [ ] Customizable button layout
 - [ ] Multiple controller profiles
 - [ ] Button mapping configuration
