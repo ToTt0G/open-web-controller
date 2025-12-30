@@ -74,17 +74,43 @@ body {
     top: 0;
     left: 0;
     width: 100%;
-    padding: 15px calc(var(--safe-right) + 20px) 0 calc(var(--safe-left) + 20px);
+    padding: 12px calc(var(--safe-right) + 20px) 0 calc(var(--safe-left) + 20px);
     display: flex;
     justify-content: space-between;
     align-items: center;
     pointer-events: none;
     /* Let touches pass through to zones if needed */
+    z-index: 50;
 }
 
 #status-bar>* {
     pointer-events: auto;
 }
+
+/* Header System Buttons (Center) */
+.header-system-buttons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.header-system-buttons .system-btn {
+    padding: 8px 14px;
+    font-size: 0.6rem;
+    min-width: auto;
+}
+
+.header-system-buttons .guide-btn {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+}
+
+.header-system-buttons .guide-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
 
 /* Connection Status */
 #connection-status {
@@ -412,22 +438,7 @@ body {
 }
 
 
-/* --- CENTER ZONE (System Buttons) --- */
-.center-zone {
-    flex: 0 0 auto;
-    width: 140px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-}
-
-.system-buttons {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-}
+/* --- SYSTEM BUTTONS --- */
 
 .system-btn {
     display: flex;
