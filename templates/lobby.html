@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenController - Lobby</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        /* Lobby-specific styles */
+        .lobby-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .lobby-title {
+            font-size: clamp(2rem, 5vw, 4rem);
+            font-weight: 900;
+            letter-spacing: 0.1em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--neon-blue), var(--neon-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .lobby-subtitle {
+            font-size: 1rem;
+            color: var(--text-muted);
+            letter-spacing: 0.2em;
+            margin-bottom: 50px;
+        }
+
+        .qr-grid {
+            display: flex;
+            gap: 60px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 50px;
+        }
+
+        .qr-card {
+            background: var(--bg-panel);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .qr-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .qr-card.primary {
+            border-color: rgba(0, 243, 255, 0.3);
+        }
+
+        .qr-card.secondary {
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .qr-card h3 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            margin: 0 0 8px 0;
+            color: var(--text-primary);
+        }
+
+        .qr-card.primary h3 {
+            color: var(--neon-blue);
+        }
+
+        .qr-card p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin: 0 0 20px 0;
+        }
+
+        .qr-card img {
+            width: 200px;
+            height: 200px;
+            border-radius: 12px;
+            background: white;
+            padding: 10px;
+        }
+
+        .qr-card .url {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 15px;
+            font-family: monospace;
+            letter-spacing: 0.05em;
+        }
+
+        .connection-counter {
+            background: var(--bg-panel);
+            border: 1px solid rgba(0, 255, 157, 0.2);
+            border-radius: 100px;
+            padding: 20px 50px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .counter-icon {
+            width: 32px;
+            height: 32px;
+            color: var(--neon-green);
+            filter: drop-shadow(0 0 10px var(--neon-green));
+        }
+
+        .counter-value {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--neon-green);
+            min-width: 60px;
+        }
+
+        .counter-label {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            letter-spacing: 0.1em;
+        }
+
+        .optional-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.65rem;
+            letter-spacing: 0.1em;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        /* No mkcert warning */
+        .no-mkcert {
+            opacity: 0.5;
+        }
+
+        .no-mkcert img {
+            filter: grayscale(1);
+        }
+
+        .no-mkcert .not-available {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-noise"></div>
+    <div class="bg-glow"></div>
+
+    <div class="lobby-container">
+        <h1 class="lobby-title">🎮 OPEN CONTROLLER</h1>
+        <p class="lobby-subtitle">SCAN TO JOIN</p>
+
+        <div class="qr-grid">
+            <!-- Join QR -->
+            <div class="qr-card primary">
+                <h3>📱 JOIN GAME</h3>
+                <p>Scan with your phone camera</p>
+                <img src="/lobby/qr-join.png" alt="Join QR Code">
+                <div class="url">{{ server_url }}</div>
+            </div>
+
+            <!-- Certificate QR -->
+            <div class="qr-card secondary {% if not mkcert_available %}no-mkcert{% endif %}">
+                <h3>🔐 CERTIFICATE <span class="optional-badge">OPTIONAL</span></h3>
+                <p>For full PWA app experience</p>
+                {% if mkcert_available %}
+                <img src="/lobby/qr-cert.png" alt="Certificate Setup QR Code">
+                <div class="url">{{ server_url }}/setup</div>
+                {% else %}
+                <img src="/lobby/qr-cert.png" alt="Certificate Setup QR Code">
+                <div class="not-available">mkcert not installed on server</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Connection Counter -->
+        <div class="connection-counter">
+            <svg class="counter-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
+            <span class="counter-value" id="client-count">{{ client_count }}</span>
+            <span class="counter-label">CONTROLLERS<br>CONNECTED</span>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+
+        socket.on('client_count', (count) => {
+            document.getElementById('client-count').textContent = count;
+        });
+    </script>
+</body>
+
+</html>

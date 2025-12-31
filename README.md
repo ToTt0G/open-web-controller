@@ -13,12 +13,13 @@ A web-based virtual Xbox 360 controller that runs on your PC and can be accessed
 - **🕹️ Dual Input Modes** - Switch between D-pad and floating analog thumbstick
 - **👆 Multi-Touch Support** - Press multiple buttons simultaneously
 - **🌐 PWA Ready** - Install as a standalone app on iOS & Android
-- **🔒 HTTPS Support** - Auto-generated self-signed SSL certificates
+- **🔒 HTTPS Support** - Auto-generated SSL certificates (or mkcert for full trust)
 - **🔌 Real-time Input** - Low-latency WebSocket connection via Socket.IO
 - **📶 Connection Status** - Visual indicator shows connection state
 - **📳 Haptic Feedback** - Vibration on button presses (mobile)
 - **⚙️ Settings Menu** - Customize thumbstick/D-pad, haptics, and more
 - **🛡️ Safe Shutdown** - Graceful cleanup of virtual controller on exit
+- **🖥️ Lobby Dashboard** - Kahoot-style screen with QR codes for easy phone setup
 
 ### 🆕 PWA Enhancements
 
@@ -68,11 +69,50 @@ python app.py
 ```
 
 ### 4. Connect from Your Phone
-1. Find your PC's local IP (shown in the terminal, or run `ipconfig`)
-2. Open `https://<your-ip>:5000` on your phone
-3. Accept the self-signed certificate warning
-4. Tap ⚙️ to access settings
-5. **Add to home screen** for the best fullscreen experience!
+1. Open `https://<your-ip>:5000/lobby` on your PC (display on big screen)
+2. Scan the **Join Game** QR code with your phone
+3. Accept the self-signed certificate warning (or set up mkcert below)
+4. **Add to home screen** for the best fullscreen experience!
+
+## 🖥️ Lobby Dashboard
+
+The lobby (`/lobby`) is designed for display on a TV or monitor:
+
+- **📱 Join Game QR** - Scan to open the controller
+- **🔐 Certificate QR** - Scan for mkcert CA setup (optional)
+- **👥 Live Counter** - Shows connected controllers in real-time
+
+## 🔐 Full PWA Support (mkcert)
+
+For a true "native app" experience without browser security warnings:
+
+### 1. Install mkcert
+```powershell
+winget install --id FiloSottile.mkcert
+# Restart your terminal after installing
+mkcert -install
+```
+
+### 2. Generate Trusted Certificates
+```powershell
+cd certs
+# Delete old self-signed certs
+Remove-Item cert.pem, key.pem -ErrorAction SilentlyContinue
+
+# Generate new certs (replace IP with yours)
+mkcert 192.168.x.x localhost 127.0.0.1
+
+# Rename to expected filenames
+Rename-Item "192.168.x.x+2.pem" "cert.pem"
+Rename-Item "192.168.x.x+2-key.pem" "key.pem"
+cd ..
+```
+
+### 3. Install CA on Phone
+Scan the **Certificate QR** from the lobby, or manually:
+
+**Android:** Settings → Security → Install certificate → CA certificate  
+**iOS:** Settings → General → VPN & Device Mgmt → Install, then enable in Certificate Trust Settings
 
 ## 📱 Install as App (PWA)
 

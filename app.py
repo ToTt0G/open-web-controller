@@ -5,7 +5,8 @@ A Flask-SocketIO application that serves a web-based virtual Xbox controller
 and translates button presses to virtual gamepad inputs.
 """
 
-from flask import Flask, render_template, jsonify, send_from_directory, request
+from flask import Flask, render_template, jsonify, send_from_directory, request, send_file
+from io import BytesIO
 from flask_socketio import SocketIO
 import vgamepad as vg
 import os
@@ -18,6 +19,7 @@ import atexit
 # Lazy initialization for gamepad (handles ViGEmBus connection issues)
 gamepad = None
 server_running = True
+connected_clients = set()  # Track connected controller clients
 
 def get_gamepad():
     """Get or create the virtual gamepad with retry logic."""
@@ -192,6 +194,21 @@ def generate_self_signed_cert():
         return False
 
 
+def get_mkcert_ca_path():
+    """Find mkcert's root CA certificate path."""
+    import subprocess
+    try:
+        result = subprocess.run(['mkcert', '-CAROOT'], capture_output=True, text=True)
+        if result.returncode == 0:
+            ca_dir = result.stdout.strip()
+            ca_path = os.path.join(ca_dir, 'rootCA.pem')
+            if os.path.exists(ca_path):
+                return ca_path
+    except FileNotFoundError:
+        pass  # mkcert not installed
+    return None
+
+
 # ============================================
 # Routes
 # ============================================
@@ -255,8 +272,99 @@ def shutdown():
 
 
 # ============================================
+# Lobby Routes (Kahoot-style dashboard)
+# ============================================
+
+@app.route('/lobby')
+def lobby():
+    """Serve the lobby dashboard for big screen display."""
+    local_ip = get_local_ip()
+    protocol = "https" if os.path.exists(CERT_FILE) else "http"
+    server_url = f"{protocol}://{local_ip}:5000"
+    mkcert_available = get_mkcert_ca_path() is not None
+    
+    return render_template('lobby.html',
+        server_url=server_url,
+        local_ip=local_ip,
+        mkcert_available=mkcert_available,
+        client_count=len(connected_clients)
+    )
+
+
+@app.route('/lobby/qr-join.png')
+def lobby_qr_join():
+    """Generate QR code for controller URL."""
+    import qrcode
+    
+    local_ip = get_local_ip()
+    protocol = "https" if os.path.exists(CERT_FILE) else "http"
+    url = f"{protocol}://{local_ip}:5000"
+    
+    qr = qrcode.make(url)
+    buffer = BytesIO()
+    qr.save(buffer, format='PNG')
+    buffer.seek(0)
+    
+    return send_file(buffer, mimetype='image/png')
+
+
+@app.route('/lobby/qr-cert.png')
+def lobby_qr_cert():
+    """Generate QR code for certificate setup page."""
+    import qrcode
+    
+    local_ip = get_local_ip()
+    protocol = "https" if os.path.exists(CERT_FILE) else "http"
+    url = f"{protocol}://{local_ip}:5000/setup"
+    
+    qr = qrcode.make(url)
+    buffer = BytesIO()
+    qr.save(buffer, format='PNG')
+    buffer.seek(0)
+    
+    return send_file(buffer, mimetype='image/png')
+
+
+@app.route('/setup')
+def setup():
+    """Serve certificate setup page with download and instructions."""
+    local_ip = get_local_ip()
+    protocol = "https" if os.path.exists(CERT_FILE) else "http"
+    server_url = f"{protocol}://{local_ip}:5000"
+    mkcert_available = get_mkcert_ca_path() is not None
+    
+    return render_template('setup.html',
+        server_url=server_url,
+        mkcert_available=mkcert_available
+    )
+
+
+@app.route('/setup/ca.pem')
+def setup_ca():
+    """Download mkcert root CA certificate."""
+    ca_path = get_mkcert_ca_path()
+    if ca_path:
+        return send_file(ca_path, as_attachment=True, download_name='rootCA.pem')
+    return jsonify({'error': 'mkcert not installed or CA not found'}), 404
+
+
+# ============================================
 # Socket.IO Event Handlers
 # ============================================
+
+@socketio.on('connect')
+def handle_connect():
+    """Track client connections."""
+    connected_clients.add(request.sid)
+    socketio.emit('client_count', len(connected_clients))
+
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    """Track client disconnections."""
+    connected_clients.discard(request.sid)
+    socketio.emit('client_count', len(connected_clients))
+
 
 @socketio.on('input')
 def handle_input(data):
@@ -316,6 +424,7 @@ if __name__ == '__main__':
     print("\n  Generating SSL certificate...")
     
     use_ssl = generate_self_signed_cert()
+    mkcert_available = get_mkcert_ca_path() is not None
     
     if use_ssl:
         protocol = "https"
@@ -324,8 +433,18 @@ if __name__ == '__main__':
     else:
         protocol = "http"
     
-    print(f"\n  Server running at: {protocol}://0.0.0.0:5000")
-    print(f"  Access from phone: {protocol}://{local_ip}:5000")
+    print(f"\n  ─────────────────────────────────────────────")
+    print(f"  📱 Controller:  {protocol}://{local_ip}:5000")
+    print(f"  🖥️  Lobby:       {protocol}://{local_ip}:5000/lobby")
+    print(f"  ─────────────────────────────────────────────")
+    
+    if mkcert_available:
+        print(f"\n  ✅ mkcert detected - Full PWA support available")
+    else:
+        print(f"\n  ℹ️  mkcert not found - Install for full PWA support:")
+        print(f"      choco install mkcert  OR  scoop install mkcert")
+        print(f"      Then run: mkcert -install")
+    
     print("\n  Press Ctrl+C to stop\n")
     
     if use_ssl:
