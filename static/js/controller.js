@@ -386,8 +386,11 @@ socket.on('connect', () => {
         requestWakeLock();
     }
 
-    // Select controller on connect
-    socket.emit('select_controller', { controller: state.selectedController });
+    // Server will auto-assign a controller slot on connect
+    // No need to emit select_controller - it's handled server-side
+    if (els.controllerDesc) {
+        els.controllerDesc.textContent = 'Connecting...';
+    }
 });
 
 // Handle controller assignment confirmation
@@ -396,7 +399,11 @@ socket.on('controller_assigned', (data) => {
         state.selectedController = data.controller;
         localStorage.setItem('selectedController', data.controller);
         if (els.controllerDesc) {
-            els.controllerDesc.textContent = `Connected as Player ${data.controller}`;
+            if (data.auto_assigned) {
+                els.controllerDesc.textContent = `Auto-assigned to Player ${data.controller}`;
+            } else {
+                els.controllerDesc.textContent = `Connected as Player ${data.controller}`;
+            }
         }
         if (els.controllerSelect) {
             els.controllerSelect.value = data.controller;

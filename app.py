@@ -394,12 +394,42 @@ def broadcast_controller_status():
     socketio.emit('controller_status', status)
 
 
+def get_next_available_controller():
+    """Find the next available controller slot (1-4), preferring empty slots."""
+    for num in range(1, 5):
+        if not get_clients_for_controller(num):
+            return num
+    # All slots have at least one client, return slot 1 as default
+    return 1
+
+
 @socketio.on('connect')
 def handle_connect():
-    """Track client connections."""
-    connected_clients.add(request.sid)
+    """Track client connections and auto-assign to next available controller."""
+    sid = request.sid
+    connected_clients.add(sid)
     socketio.emit('client_count', len(connected_clients))
-    # Don't auto-assign a controller - wait for select_controller event
+    
+    # Auto-assign to next available controller slot
+    next_controller = get_next_available_controller()
+    client_assignments[sid] = next_controller
+    
+    # Create the gamepad for this controller if it doesn't exist
+    gp = get_or_create_gamepad(next_controller)
+    success = gp is not None
+    
+    # Notify client of their auto-assigned controller
+    socketio.emit('controller_assigned', {
+        'controller': next_controller,
+        'success': success,
+        'auto_assigned': True
+    }, to=sid)
+    
+    # Broadcast updated controller status to all clients
+    broadcast_controller_status()
+    
+    if success:
+        print(f"  Client {sid[:8]}... auto-assigned to controller {next_controller}")
 
 
 @socketio.on('disconnect')
