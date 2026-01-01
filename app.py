@@ -17,37 +17,70 @@ import sys
 import atexit
 
 # Lazy initialization for gamepad (handles ViGEmBus connection issues)
-gamepad = None
+# Multi-controller support: up to 4 virtual gamepads
+gamepads = {}  # {controller_num: VX360Gamepad} for controller 1-4
+client_assignments = {}  # {session_id: controller_num}
 server_running = True
 connected_clients = set()  # Track connected controller clients
 
-def get_gamepad():
-    """Get or create the virtual gamepad with retry logic."""
-    global gamepad
-    if gamepad is None:
+
+def get_or_create_gamepad(controller_num):
+    """Get or create the virtual gamepad for a specific controller slot (1-4)."""
+    global gamepads
+    
+    if controller_num < 1 or controller_num > 4:
+        return None
+    
+    if controller_num not in gamepads:
         try:
-            gamepad = vg.VX360Gamepad()
-            print("  ✓ Virtual Xbox 360 controller connected")
+            gamepads[controller_num] = vg.VX360Gamepad()
+            print(f"  ✓ Virtual Xbox 360 controller {controller_num} connected")
         except Exception as e:
-            print(f"  ✗ Could not connect to ViGEmBus: {e}")
+            print(f"  ✗ Could not connect controller {controller_num} to ViGEmBus: {e}")
             print("    Try: Restart the ViGEmBus service or reboot your PC")
             return None
-    return gamepad
+    
+    return gamepads[controller_num]
+
+
+def disconnect_gamepad(controller_num):
+    """Disconnect a specific virtual gamepad if it exists."""
+    global gamepads
+    
+    if controller_num in gamepads:
+        try:
+            gamepads[controller_num].reset()
+            gamepads[controller_num].update()
+            del gamepads[controller_num]
+            print(f"  ✓ Virtual controller {controller_num} disconnected")
+        except Exception as e:
+            print(f"  ✗ Error disconnecting controller {controller_num}: {e}")
+
+
+def get_clients_for_controller(controller_num):
+    """Get all client session IDs using a specific controller."""
+    return [sid for sid, num in client_assignments.items() if num == controller_num]
+
+
+def cleanup_unused_controllers():
+    """Disconnect controllers that have no clients assigned."""
+    for num in list(gamepads.keys()):
+        if not get_clients_for_controller(num):
+            disconnect_gamepad(num)
 
 
 def cleanup_gamepad():
-    """Safely cleanup and disconnect the virtual gamepad."""
-    global gamepad
-    if gamepad is not None:
-        try:
-            # Reset all inputs before disconnecting
-            gamepad.reset()
-            gamepad.update()
-            # Note: vgamepad automatically handles cleanup on object deletion
-            gamepad = None
-            print("\n  ✓ Virtual controller disconnected safely")
-        except Exception as e:
-            print(f"\n  ✗ Error during controller cleanup: {e}")
+    """Safely cleanup and disconnect all virtual gamepads."""
+    global gamepads
+    if gamepads:
+        for num in list(gamepads.keys()):
+            try:
+                gamepads[num].reset()
+                gamepads[num].update()
+            except Exception as e:
+                print(f"\n  ✗ Error during controller {num} cleanup: {e}")
+        gamepads.clear()
+        print("\n  ✓ All virtual controllers disconnected safely")
 
 
 def shutdown_server():
@@ -352,29 +385,104 @@ def setup_ca():
 # Socket.IO Event Handlers
 # ============================================
 
+def broadcast_controller_status():
+    """Broadcast which controllers are currently in use."""
+    status = {
+        num: len(get_clients_for_controller(num)) 
+        for num in range(1, 5)
+    }
+    socketio.emit('controller_status', status)
+
+
 @socketio.on('connect')
 def handle_connect():
     """Track client connections."""
     connected_clients.add(request.sid)
     socketio.emit('client_count', len(connected_clients))
+    # Don't auto-assign a controller - wait for select_controller event
 
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    """Track client disconnections."""
+    """Track client disconnections and cleanup controller assignments."""
     connected_clients.discard(request.sid)
+    
+    # Get the controller this client was using
+    old_controller = client_assignments.pop(request.sid, None)
+    
+    # Cleanup unused controller if no other clients are using it
+    if old_controller is not None:
+        if not get_clients_for_controller(old_controller):
+            disconnect_gamepad(old_controller)
+    
     socketio.emit('client_count', len(connected_clients))
+    broadcast_controller_status()
+
+
+@socketio.on('select_controller')
+def handle_select_controller(data):
+    """Handle client request to select a specific controller (1-4)."""
+    sid = request.sid
+    controller_num = data.get('controller', 1)
+    
+    # Validate controller number
+    if controller_num < 1 or controller_num > 4:
+        controller_num = 1
+    
+    # Get old assignment
+    old_controller = client_assignments.get(sid)
+    
+    # If already assigned to the requested controller, do nothing
+    if old_controller == controller_num:
+        socketio.emit('controller_assigned', {
+            'controller': controller_num,
+            'success': True
+        }, to=sid)
+        return
+    
+    # Remove old assignment
+    if old_controller is not None:
+        del client_assignments[sid]
+        # Cleanup old controller if no one else is using it
+        if not get_clients_for_controller(old_controller):
+            disconnect_gamepad(old_controller)
+    
+    # Assign new controller
+    client_assignments[sid] = controller_num
+    
+    # Create the gamepad for this controller if it doesn't exist
+    gp = get_or_create_gamepad(controller_num)
+    success = gp is not None
+    
+    # Notify client of assignment result
+    socketio.emit('controller_assigned', {
+        'controller': controller_num,
+        'success': success
+    }, to=sid)
+    
+    # Broadcast updated controller status to all clients
+    broadcast_controller_status()
+    
+    if success:
+        print(f"  Client {sid[:8]}... assigned to controller {controller_num}")
 
 
 @socketio.on('input')
 def handle_input(data):
     """Handle input from web client (buttons and thumbstick)."""
-    input_type = data.get('type', 'button')
+    sid = request.sid
     
-    # Get gamepad with lazy initialization
-    gp = get_gamepad()
+    # Get this client's assigned controller
+    controller_num = client_assignments.get(sid)
+    if controller_num is None:
+        return  # Client hasn't selected a controller yet
+    
+    # Get the gamepad for this controller
+    gp = gamepads.get(controller_num)
     if gp is None:
         return  # Gamepad not available
+    
+    input_type = data.get('type', 'button')
     
     if input_type == 'button':
         btn = data.get('button')

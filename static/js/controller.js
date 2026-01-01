@@ -10,7 +10,8 @@ const state = {
     useThumbstick: true, // Default to true (Floating Joystick)
     activeTouches: new Map(), // specialized map for button touches
     wakeLockEnabled: true,
-    wakeLock: null
+    wakeLock: null,
+    selectedController: parseInt(localStorage.getItem('selectedController')) || 1
 };
 
 // DOM Elements
@@ -32,7 +33,9 @@ const els = {
     offlineIndicator: document.getElementById('offline-indicator'),
     installPrompt: document.getElementById('install-prompt'),
     installBtn: document.getElementById('install-btn'),
-    installDismiss: document.getElementById('install-dismiss')
+    installDismiss: document.getElementById('install-dismiss'),
+    controllerSelect: document.getElementById('controller-select'),
+    controllerDesc: document.getElementById('controller-desc')
 };
 
 // ============================================
@@ -382,6 +385,33 @@ socket.on('connect', () => {
     if (state.wakeLockEnabled) {
         requestWakeLock();
     }
+
+    // Select controller on connect
+    socket.emit('select_controller', { controller: state.selectedController });
+});
+
+// Handle controller assignment confirmation
+socket.on('controller_assigned', (data) => {
+    if (data.success) {
+        state.selectedController = data.controller;
+        localStorage.setItem('selectedController', data.controller);
+        if (els.controllerDesc) {
+            els.controllerDesc.textContent = `Connected as Player ${data.controller}`;
+        }
+        if (els.controllerSelect) {
+            els.controllerSelect.value = data.controller;
+        }
+    } else {
+        if (els.controllerDesc) {
+            els.controllerDesc.textContent = `Failed to connect as Player ${data.controller}`;
+        }
+    }
+});
+
+// Handle controller status updates (which controllers are in use)
+socket.on('controller_status', (status) => {
+    console.log('Controller status:', status);
+    // Could be used to show which controllers are in use in the UI
 });
 
 socket.on('disconnect', () => {
@@ -397,7 +427,23 @@ socket.on('connect_error', () => {
 // Prevent context menu
 window.oncontextmenu = (e) => { e.preventDefault(); return false; };
 
+// Controller selection handler
+if (els.controllerSelect) {
+    els.controllerSelect.value = state.selectedController;
+    els.controllerSelect.addEventListener('change', (e) => {
+        const newController = parseInt(e.target.value);
+        state.selectedController = newController;
+        localStorage.setItem('selectedController', newController);
+
+        if (els.controllerDesc) {
+            els.controllerDesc.textContent = `Switching to Player ${newController}...`;
+        }
+
+        socket.emit('select_controller', { controller: newController });
+    });
+}
+
 // Initialize
 initJoystick();
 initButtons();
-console.log('OpenController Cyber v3.0 Initialized');
+console.log('OpenController Cyber v4.0 Initialized - Multi-Controller Support');

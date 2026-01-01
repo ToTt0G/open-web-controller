@@ -1,5 +1,6 @@
 flask>=2.0.0
 flask-socketio>=5.0.0
+eventlet>=0.33.0
 vgamepad>=0.0.8
 cryptography>=3.4.0
 qrcode>=7.0
